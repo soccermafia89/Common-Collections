@@ -2,20 +2,20 @@ package ethier.alex.common.collection;
 
 /**
 
-To be used by ArrayLinkList only.
+To be used by the ArrayLinkList.
 
  @author Alex Ethier
  */
 public class ArrayLink<E> {
     
-    public E[] values;
-    public ArrayLink next;
+    protected E[] values;
+    protected ArrayLink next;
     
-    public ArrayLink(int size) {
+    protected ArrayLink(int size) {
         values = (E[]) new Object[size];
     }
     
-    public ArrayLink(E[] newValues) {
+    protected ArrayLink(E[] newValues) {
         values = newValues;
     }
 }

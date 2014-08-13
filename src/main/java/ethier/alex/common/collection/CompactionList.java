@@ -4,11 +4,12 @@
  */
 package ethier.alex.common.collection;
 
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 
 /**
 
-To support better read times than the ArrayLinkList, on any read the multiple links will be condensed into a single link.
+ An implementation of collection. Should have much better write performance than an ArrayList while retaining read performance.
 
  @author Alex Ethier
  */
@@ -20,41 +21,82 @@ public class CompactionList<E> extends ArrayLinkList {
     public E get(int index) {
 
         compact();
-        return (E) super.readLink.values[index];
+        return (E) super.firstLink.values[index];
     }
-    
+
     @Override
     public Iterator<E> iterator() {
         compact();
-        if(compactArray == null) { // Consider corner case where compaction hasn't occurred yet.
-            return new CompactionIterator(super.readLink.values, super.totalSize);
+        if (compactArray == null) { // Consider corner case where compaction hasn't occurred yet.
+            return new CompactionIterator();
         }
-        return new CompactionIterator(compactArray, super.totalSize);
+        return new CompactionIterator();
     }
 
     // Compacts the underlying linklist into a single link with all elements within a single array.
     private void compact() {
-        
-        if (super.readLink.next != null) {
-            ArrayLink link = super.readLink;
-            
-            int newSize = (super.totalSize*3)/2 + 1;
+
+        if (super.firstLink.next != null) {
+            ArrayLink link = super.firstLink;
+
+            int newSize = (super.totalSize * 3) / 2 + 1;
             compactArray = new Object[newSize];
             int offset = 0;
 
-            while(link.next != null) {
+            while (link.next != null) {
                 Object[] values = link.values;
                 System.arraycopy(values, 0, compactArray, offset, values.length);
                 offset += values.length;
-                link = link.next;      
+                link = link.next;
             }
             // The last link is a corner case
             Object[] values = link.values;
             System.arraycopy(values, 0, compactArray, offset, super.totalSize - offset);
 
             link = new ArrayLink(compactArray);
-            super.readLink = link;
+            super.firstLink = link;
             super.writeLink = link;
+        }
+    }
+
+    /**
+
+     Iterator
+
+     */
+    private class CompactionIterator<E> implements Iterator {
+
+        protected int offset;
+        protected int iteratorModCount;
+
+        public CompactionIterator() {
+            offset = 0;
+            iteratorModCount = CompactionList.super.modCount;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return offset < CompactionList.super.totalSize;
+        }
+
+        @Override
+        public E next() {
+            checkModCount();
+            
+            int tmpPointer = offset;
+            offset++;
+            return (E) compactArray[tmpPointer];
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        final void checkModCount() {
+            if (CompactionList.super.modCount != iteratorModCount) {
+                throw new ConcurrentModificationException();
+            }
         }
     }
 }

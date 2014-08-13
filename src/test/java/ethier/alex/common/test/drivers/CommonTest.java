@@ -5,6 +5,8 @@ import com.google.common.collect.Lists;
 import com.google.monitoring.runtime.instrumentation.common.com.google.common.collect.HashMultiset;
 import ethier.alex.common.collection.ArrayLinkList;
 import ethier.alex.common.collection.CompactionList;
+import ethier.alex.common.collection.ControlArrayList;
+import ethier.alex.common.collection.StaticControlConfigurator;
 import ethier.alex.common.map.EthierMap;
 import ethier.alex.common.test.utils.DataGenerator;
 import java.util.*;
@@ -17,22 +19,14 @@ import org.junit.Test;
 
 /**
 
- TODO: Consider switching to caliper.
-
- CONSIDER: Immutable HASH store:
-
- Only accepts byte array serializations of objects. (Objects therefore must be immutable.)
- Serialization must follow the following property if object1.equals(object2) byteArray1 == byteArray2
- Uses a hashcode hint to improve performance (hashcode used to form buckets).
-
- Uses the byte array to:
- Calculate a non-collision based key
- Write bytes into bucket using the key.
- Bucket is expandable based on byte array max size.
+Tests validating operation and performance of new data structures.
 
  @author alex
  */
 public class CommonTest {
+    
+    // TEST CASE TODOS:
+    // Fail fast under concurrent modification.
 
     private static Logger logger = LogManager.getLogger(CommonTest.class);
 
@@ -161,6 +155,7 @@ public class CommonTest {
             Collection arrayList = new ArrayList();
             Collection arrayDeque = new ArrayDeque();
             Collection arrayLinkList = new ArrayLinkList();
+            Collection controlList = new ControlArrayList(size);
 //            Collection multiset = HashMultiset.create();
 //            Collection googleArrayList = Lists.newArrayList();
             Collection linkedList = new LinkedList();
@@ -169,10 +164,12 @@ public class CommonTest {
             collections.add(arrayDeque);
             collections.add(arrayList);
             collections.add(arrayLinkList);
+            collections.add(controlList);
 //            collections.add(multiset); // Takes way too long.
 //            collections.add(googleArrayList); // Wrapper for ArrayList
             collections.add(linkedList);
             collections.add(compactionList);
+            
 
             Collections.shuffle(collections);
             Iterator<Collection> it = collections.iterator();
@@ -262,6 +259,8 @@ public class CommonTest {
             collectionClasses.add(ArrayLinkList.class);
             collectionClasses.add(LinkedList.class);
             collectionClasses.add(CompactionList.class);
+            collectionClasses.add(ControlArrayList.class);
+            StaticControlConfigurator.setSize(size); // Used to configure the control array list.
 
             Collections.shuffle(collectionClasses);
 
@@ -352,17 +351,17 @@ public class CommonTest {
 //            List arrayDeque = new ArrayDeque();
             List arrayLinkList = new ArrayLinkList();
 //            Collection multiset = HashMultiset.create();
-//            Collection googleArrayList = Lists.newArrayList();
-            List linkedList = new LinkedList();
+//            List linkedList = new LinkedList(); // Linked list too slow
             List compactionList = new CompactionList();
+            List controlArrayList = new ControlArrayList(size);
 
 //            collections.add(arrayDeque);
             collections.add(arrayList);
-            collections.add(arrayLinkList);
-//            collections.add(multiset); // Takes way too long.
-//            collections.add(googleArrayList); // Wrapper for ArrayList
-            collections.add(linkedList);
+            collections.add(arrayLinkList);// Borderline too slow
+//            collections.add(multiset);
+//            collections.add(linkedList); // Takes way too long.
             collections.add(compactionList);
+            collections.add(controlArrayList);
 
             Collections.shuffle(collections);
             Iterator<List> it = collections.iterator();
@@ -390,6 +389,8 @@ public class CommonTest {
                 methodTimer.stop();
                 logger.info("{} took {} milliseconds to traverse {} entries.", list.getClass().getCanonicalName(), methodTimer.elapsed(TimeUnit.MILLISECONDS), size);
                 methodTimer.reset();
+                methodTimer.start();
+
                 
                 // Test collection random access
                 for(int i=0; i<randomAccessPoints.length;i++) {
@@ -397,9 +398,11 @@ public class CommonTest {
                     double value = list.get(randomAccessPoint);
                     total += value;
                 }
-
+                methodTimer.stop();
                 logger.info("{} took {} milliseconds to random access {} entries.", list.getClass().getCanonicalName(), methodTimer.elapsed(TimeUnit.MILLISECONDS), randomAccessPoints.length);
-
+                methodTimer.reset();
+                methodTimer.start();
+                
                 // Test collection traversal once more
                 valueIterator = list.iterator();
                 while (valueIterator.hasNext()) {
