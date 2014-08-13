@@ -44,9 +44,8 @@ public class CompactionList<E> extends ArrayLinkList {
             int offset = 0;
 
             while (link.next != null) {
-                Object[] values = link.values;
-                System.arraycopy(values, 0, compactArray, offset, values.length);
-                offset += values.length;
+                System.arraycopy(link.values, 0, compactArray, offset, link.values.length);
+                offset += link.values.length;
                 link = link.next;
             }
             // The last link is a corner case
@@ -57,6 +56,26 @@ public class CompactionList<E> extends ArrayLinkList {
             super.firstLink = link;
             super.writeLink = link;
         }
+    }
+    
+    @Override
+    public Object[] toArray() {
+        Object[] returnArray = new Object[totalSize];
+        
+        ArrayLink link = firstLink;
+        int offset = 0;
+        while (link.next != null) {
+            System.arraycopy(link.values, 0, returnArray, offset, link.values.length);
+            offset += link.values.length;
+            link = link.next;
+        }
+        
+        // Use this oppurtunity as a free compaction (that also shrinks the array).
+        ArrayLink compactLink = new ArrayLink(returnArray);
+        firstLink = compactLink;
+        writeLink = compactLink;
+        
+        return returnArray;
     }
 
     /**

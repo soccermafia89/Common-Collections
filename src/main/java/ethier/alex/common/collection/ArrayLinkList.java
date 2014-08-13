@@ -4,7 +4,7 @@ import java.util.*;
 
 /**
 
- An implementation of collection.  Should have much better write performance than ArrayLists, but will be slower during random access.
+ An implementation of collection. Should have much better write performance than ArrayLists, but will be slower during random access.
 
  @author Alex Ethier
  */
@@ -23,7 +23,7 @@ public class ArrayLinkList<E> implements List<E> {
         firstLink = writeLink;
         modCount = 0;
     }
-    
+
     public ArrayLinkList(int initialCapacity) {
         writeLink = new ArrayLink(initialCapacity);
         writeLinkOffset = 0;
@@ -52,24 +52,6 @@ public class ArrayLinkList<E> implements List<E> {
         return true;
     }
 
-//    public E getNext() {
-//        
-//        readTotalOffset++;
-//
-//        if(readBucketOffset < readLinkedList.values.length) {
-//            int tmpOffset = readBucketOffset;
-//            readBucketOffset++;
-//            return (E) readLinkedList.values[tmpOffset];
-//        } else {
-//            readLinkedList = readLinkedList.next;
-//            readBucketOffset = 1;
-//
-//            return (E) readLinkedList.values[0];
-//        }
-//    }
-//    public boolean hasNext() {
-//        return readTotalOffset < totalSize;
-//    }
     @Override
     public int size() {
         return totalSize;
@@ -105,11 +87,11 @@ public class ArrayLinkList<E> implements List<E> {
     /*
      Method one:
      If collection.size > remaining object[] size
-     Then shrink current objec[] and add a new link
+     Then shrink current object[] and add a new link
      otherwise copy the array elements onto the current array.
 
      Method two:
-     Always shrink the current object[] and append on a new ArrayLink
+     Always shrink the current object[] (do no checks in method 1) and append on a new ArrayLink
 
      Method three:
      Individually copy elements over.
@@ -117,21 +99,48 @@ public class ArrayLinkList<E> implements List<E> {
      */
     @Override
     public boolean addAll(Collection<? extends E> c) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        Object[] newArray = c.toArray();
+
+        int additionalSize = newArray.length;
+        int remainingSize = writeLink.values.length - writeLinkOffset;
+
+        if (additionalSize < remainingSize) { // Luckily we can append the new elements over.
+            System.arraycopy(newArray, 0, writeLink.values, writeLinkOffset, additionalSize);
+        } else {
+            System.arraycopy(newArray, 0, writeLink.values, writeLinkOffset, remainingSize);
+            int leftOverSize = additionalSize - remainingSize;
+            int newSize = Math.max((writeLink.values.length * 3) / 2, leftOverSize);
+            writeLink.next = new ArrayLink(newSize);
+            writeLink = writeLink.next;
+            System.arraycopy(newArray, 0, writeLink.values, writeLinkOffset, leftOverSize);
+        }
+
+        modCount++;
+        totalSize += additionalSize;
+        return true;
     }
 
     @Override
     public boolean contains(Object o) {
-        System.out.println("TODO");
-        throw new UnsupportedOperationException("Not supported yet.");
+        return indexOf(o) >= 0;
     }
 
     @Override
     public Object[] toArray() {
-        System.out.println("TODO");
-        throw new UnsupportedOperationException("Not supported yet.");
+        Object[] returnArray = new Object[totalSize];
+
+        ArrayLink link = firstLink;
+        int offset = 0;
+        while (link.next != null) {
+            System.arraycopy(link.values, 0, returnArray, offset, link.values.length);
+            offset += link.values.length;
+            link = link.next;
+        }
+
+        return returnArray;
     }
 
+    // This method is bizzare, implement later.
     @Override
     public <T> T[] toArray(T[] a) {
         System.out.println("TODO");
@@ -140,8 +149,31 @@ public class ArrayLinkList<E> implements List<E> {
 
     @Override
     public int indexOf(Object o) {
-        System.out.println("TODO");
-        throw new UnsupportedOperationException("Not supported yet.");
+
+        Iterator it = new ArrayLinkListIterator();
+        int count = 0;
+
+        if (o == null) {
+            while (it.hasNext()) {
+                Object c = it.next();
+
+                if (c == null) {
+                    return count;
+                }
+                count++;
+            }
+
+        } else {
+            while (it.hasNext()) {
+                Object c = it.next();
+
+                if (c.equals(o)) {
+                    return count;
+                }
+                count++;
+            }
+        }
+        return -1;
     }
 
     @Override
@@ -215,6 +247,8 @@ public class ArrayLinkList<E> implements List<E> {
     @Override
     public E remove(int index) {
         throw new UnsupportedOperationException("Not supported yet.");
+
+
     }
 
     /**
@@ -243,7 +277,7 @@ public class ArrayLinkList<E> implements List<E> {
 
         @Override
         public E next() {
-            
+
             checkModCount();
 
             totalCurrentOffset++;

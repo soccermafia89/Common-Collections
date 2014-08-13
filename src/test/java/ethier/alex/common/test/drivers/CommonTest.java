@@ -27,6 +27,9 @@ public class CommonTest {
     
     // TEST CASE TODOS:
     // Fail fast under concurrent modification.
+    // addAll (both cases)
+    // toArray
+    // indexOf
 
     private static Logger logger = LogManager.getLogger(CommonTest.class);
 
