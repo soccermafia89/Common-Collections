@@ -33,4 +33,14 @@ public class DataGenerator {
         
         return integers;
     }
+    
+    public BigObject[] getBigObjects(int number, int objectSize) {
+        BigObject[] bigObjects = new BigObject[number];
+        for(int i=0; i < bigObjects.length; i++) {
+            BigObject newBigObject = new BigObject(objectSize, i);
+            bigObjects[i] = newBigObject;
+        }
+        
+        return bigObjects;
+    }
 }

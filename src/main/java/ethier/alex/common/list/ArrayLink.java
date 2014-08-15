@@ -1,4 +1,4 @@
-package ethier.alex.common.collection;
+package ethier.alex.common.list;
 
 /**
 

@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package ethier.alex.common.collection;
+package ethier.alex.common.list;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -15,7 +15,7 @@ import java.util.ListIterator;
 
  @author alex
  */
-public class ControlArrayList<E> implements List {
+public class ControlArrayList<E> implements List<E> {
 
     int writeOffset;
     Object[] array;
@@ -53,7 +53,7 @@ public class ControlArrayList<E> implements List {
 
     @Override
     public Object[] toArray() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return array;
     }
 
     @Override
@@ -80,7 +80,10 @@ public class ControlArrayList<E> implements List {
 
     @Override
     public boolean addAll(Collection c) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        Object[] objects = c.toArray();
+        System.arraycopy(c.toArray(), 0, objects, writeOffset, objects.length);
+        writeOffset += objects.length;
+        return true;
     }
 
     @Override
@@ -119,13 +122,27 @@ public class ControlArrayList<E> implements List {
     }
 
     @Override
-    public Object remove(int index) {
+    public E remove(int index) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public int indexOf(Object o) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (o == null) {
+            for (int i = 0; i < array.length; i++) {
+                if (array[i] == null) {
+                    return i;
+                }
+            }
+        } else {
+            for (int i = 0; i < array.length; i++) {
+                if (array[i].equals(o)) {
+                    return i;
+                }
+            }
+        }
+
+        return -1;
     }
 
     @Override

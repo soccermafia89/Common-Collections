@@ -1,4 +1,4 @@
-package ethier.alex.common.collection;
+package ethier.alex.common.list;
 
 import java.util.*;
 
@@ -51,6 +51,58 @@ public class ArrayLinkList<E> implements List<E> {
         totalSize++;
         return true;
     }
+    
+    /*TODO: ensure we have test cases for:
+    
+    index > total size
+    index < total size but is at last link
+    index < total size, is not at last link
+    
+    using this add method to fully populate the list (consider using a random insert generator).
+    */
+    
+    @Override
+    public void add(int index, E element) {
+                
+        int count = index;
+        ArrayLink tmpLink = firstLink;
+        while (count >= tmpLink.values.length) {
+            
+            //TODO: do the check for last link here and take appropriate action and returning rather than breaking the loop.
+            if(tmpLink.next == null) { // The insertion point is beyond the current max size of the List.
+                int newSize = Math.max(tmpLink.values.length, count);
+                newSize = (newSize*3)/2 + 1;
+                
+                writeLink.next = new ArrayLink(newSize);
+                writeLink = writeLink.next;
+                
+                // TODO:
+//                writeLink.values[0] = element;
+//                writeLinkOffset = 1;
+            }
+            
+            count = count - tmpLink.values.length;
+            tmpLink = tmpLink.next;
+        }
+        
+        int remainingValues = count + totalSize -index; // The size of remaining elements in last link.
+
+//        
+//        
+//        
+//        if(count < remainingValues) { // We have to shift some elements to the right
+//            if(tmpLink.values.length == remainingValues ) { // If the last link happens to be full
+//                 int newSize = (tmpLink.values.length * 3) / 2 + 1;
+//            }
+//             System.arraycopy(tmpLink.values, count, tmpLink.values, index+1, remainingValues - count);
+//             tmpLink.values[index] = element;
+//        } else { // The index is beyond total size, no elements need to be shifted.
+//            
+//        }
+        
+        
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     @Override
     public int size() {
@@ -75,6 +127,10 @@ public class ArrayLinkList<E> implements List<E> {
 
     @Override
     public E get(int index) {
+        if(index > totalSize) {
+            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + totalSize);
+        }
+        
         ArrayLink tmpLink = firstLink;
         while (index >= tmpLink.values.length) {
             index = index - tmpLink.values.length;
@@ -149,30 +205,40 @@ public class ArrayLinkList<E> implements List<E> {
 
     @Override
     public int indexOf(Object o) {
-
-        Iterator it = new ArrayLinkListIterator();
-        int count = 0;
-
-        if (o == null) {
-            while (it.hasNext()) {
-                Object c = it.next();
-
-                if (c == null) {
-                    return count;
+        
+        ArrayLink tmpLink = firstLink;
+        int totalOffset = 0;
+        int linkOffset = 0;
+        if(o == null) {
+            while (totalOffset < totalSize) {
+                if(linkOffset == tmpLink.values.length) {
+                    tmpLink = tmpLink.next;
+                    linkOffset = 0;
+                } else {
+                    if(tmpLink.values[linkOffset] == null) {
+                        return totalOffset;
+                    }
+                    
+                    totalOffset++;
+                    linkOffset++;
                 }
-                count++;
             }
-
         } else {
-            while (it.hasNext()) {
-                Object c = it.next();
-
-                if (c.equals(o)) {
-                    return count;
+            while (totalOffset < totalSize) {
+                if(linkOffset == tmpLink.values.length) {
+                    tmpLink = tmpLink.next;
+                    linkOffset = 0;
+                } else {
+                    if(tmpLink.values[linkOffset].equals(o)) {
+                        return totalOffset;
+                    }
+                    
+                    totalOffset++;
+                    linkOffset++;
                 }
-                count++;
             }
         }
+
         return -1;
     }
 
@@ -239,12 +305,6 @@ public class ArrayLinkList<E> implements List<E> {
 
     // Do not support
     @Override
-    public void add(int index, E element) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    // Do not support
-    @Override
     public E remove(int index) {
         throw new UnsupportedOperationException("Not supported yet.");
 
@@ -279,7 +339,10 @@ public class ArrayLinkList<E> implements List<E> {
         public E next() {
 
             checkModCount();
-
+            if(totalCurrentOffset >= totalSize) {
+                throw new NoSuchElementException();
+            }
+            
             totalCurrentOffset++;
 
             if (linkOffset < linkPointer.values.length) {

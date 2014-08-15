@@ -2,10 +2,11 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package ethier.alex.common.collection;
+package ethier.alex.common.list;
 
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
 
@@ -13,14 +14,17 @@ import java.util.Iterator;
 
  @author Alex Ethier
  */
-public class CompactionList<E> extends ArrayLinkList {
+public class CompactionList<E> extends ArrayLinkList<E> {
 
     Object[] compactArray;
 
     @Override
     public E get(int index) {
-
         compact();
+        if(index > super.totalSize) {
+            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + totalSize);
+        }
+        
         return (E) super.firstLink.values[index];
     }
 
@@ -34,6 +38,7 @@ public class CompactionList<E> extends ArrayLinkList {
     }
 
     // Compacts the underlying linklist into a single link with all elements within a single array.
+    // All read methods should call compact().
     private void compact() {
 
         if (super.firstLink.next != null) {
@@ -57,11 +62,11 @@ public class CompactionList<E> extends ArrayLinkList {
             super.writeLink = link;
         }
     }
-    
+
     @Override
     public Object[] toArray() {
         Object[] returnArray = new Object[totalSize];
-        
+
         ArrayLink link = firstLink;
         int offset = 0;
         while (link.next != null) {
@@ -69,13 +74,34 @@ public class CompactionList<E> extends ArrayLinkList {
             offset += link.values.length;
             link = link.next;
         }
-        
+
         // Use this oppurtunity as a free compaction (that also shrinks the array).
         ArrayLink compactLink = new ArrayLink(returnArray);
         firstLink = compactLink;
         writeLink = compactLink;
-        
+
         return returnArray;
+    }
+
+    @Override
+    public int indexOf(Object o) {
+        this.compact();
+
+        if (o == null) {
+            for (int i = 0; i < totalSize; i++) {
+                if (super.firstLink.values[i] == null) {
+                    return i;
+                }
+            }
+        } else {
+            for (int i = 0; i < totalSize; i++) {
+                if (super.firstLink.values[i].equals(o)) {
+                    return i;
+                }
+            }
+        }
+        
+        return -1;
     }
 
     /**
@@ -101,7 +127,10 @@ public class CompactionList<E> extends ArrayLinkList {
         @Override
         public E next() {
             checkModCount();
-            
+            if(offset >= CompactionList.super.totalSize) {
+                throw new NoSuchElementException();
+            }
+
             int tmpPointer = offset;
             offset++;
             return (E) compactArray[tmpPointer];

@@ -3,11 +3,12 @@ package ethier.alex.common.test.drivers;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.monitoring.runtime.instrumentation.common.com.google.common.collect.HashMultiset;
-import ethier.alex.common.collection.ArrayLinkList;
-import ethier.alex.common.collection.CompactionList;
-import ethier.alex.common.collection.ControlArrayList;
-import ethier.alex.common.collection.StaticControlConfigurator;
+import ethier.alex.common.list.ArrayLinkList;
+import ethier.alex.common.list.CompactionList;
+import ethier.alex.common.list.ControlArrayList;
+import ethier.alex.common.list.StaticControlConfigurator;
 import ethier.alex.common.map.EthierMap;
+import ethier.alex.common.test.utils.BigObject;
 import ethier.alex.common.test.utils.DataGenerator;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -19,18 +20,18 @@ import org.junit.Test;
 
 /**
 
-Tests validating operation and performance of new data structures.
+ Tests validating operation and performance of new data structures.
 
  @author alex
  */
 public class CommonTest {
-    
+
     // TEST CASE TODOS:
+    // Large object test
     // Fail fast under concurrent modification.
     // addAll (both cases)
     // toArray
     // indexOf
-
     private static Logger logger = LogManager.getLogger(CommonTest.class);
 
     @BeforeClass
@@ -172,7 +173,7 @@ public class CommonTest {
 //            collections.add(googleArrayList); // Wrapper for ArrayList
             collections.add(linkedList);
             collections.add(compactionList);
-            
+
 
             Collections.shuffle(collections);
             Iterator<Collection> it = collections.iterator();
@@ -278,16 +279,16 @@ public class CommonTest {
                 writeTimer.start();
 //                this.addCollection(collectionClass, collections, size);
                 Collection[] collectionArray = new Collection[numCollections];
-                
+
                 for (int i = 0; i < numCollections; i++) {
                     Collection newCollection = (Collection) collectionClass.newInstance();
                     double[] values = data[i];
-                    for(int j=0; j<values.length; j++) {
+                    for (int j = 0; j < values.length; j++) {
                         double value = values[j];
                         newCollection.add(value);
 //                        logger.info("Adding {} to {}.", value, collectionClass.getCanonicalName());
                     }
-                    
+
                     collectionArray[i] = newCollection;
                 }
 
@@ -295,7 +296,7 @@ public class CommonTest {
 
                 traversalTimer.start();
                 // Test collection traversal
-                for(int i=0; i<numCollections; i++) {
+                for (int i = 0; i < numCollections; i++) {
                     Collection collection = collectionArray[i];
                     Iterator<Double> valueIterator = collection.iterator();
                     while (valueIterator.hasNext()) {
@@ -310,13 +311,12 @@ public class CommonTest {
                 logger.info("TODO: test collection add all method.");
 
 
-                logger.info("{} took {} milliseconds to write {} entries in {} collections.", collectionClass.newInstance().getClass().getCanonicalName()
-                        , writeTimer.elapsed(TimeUnit.MILLISECONDS), size, numCollections);
+                logger.info("{} took {} milliseconds to write {} entries in {} collections.", collectionClass.newInstance().getClass().getCanonicalName(), writeTimer.elapsed(TimeUnit.MILLISECONDS), size, numCollections);
                 logger.info("{} took {} milliseconds to traverse {} entries in {} collections.", collectionClass.newInstance().getClass().getCanonicalName(), traversalTimer.elapsed(TimeUnit.MILLISECONDS), size, numCollections);
                 logger.info("{} took {} milliseconds total.", collectionClass.newInstance().getClass().getCanonicalName(), totalTimer.elapsed(TimeUnit.MILLISECONDS));
                 logger.info("");
-                
-                collectionArray = null;                
+
+                collectionArray = null;
                 totalTimer.reset();
                 traversalTimer.reset();
                 writeTimer.reset();
@@ -326,7 +326,7 @@ public class CommonTest {
             logger.trace("Total: {}", total);
         }
     }
-    
+
     @Test
     public void testReadCollection() {
         System.out.println("");
@@ -343,7 +343,7 @@ public class CommonTest {
             int size = 5000000;
             DataGenerator dataGenerator = new DataGenerator();
             double[] values = dataGenerator.getDoubles(size);
-            int[] randomAccessPoints = dataGenerator.getIntegers(10*size, size);
+            int[] randomAccessPoints = dataGenerator.getIntegers(10 * size, size);
             Stopwatch methodTimer = Stopwatch.createUnstarted();
             Stopwatch collectionTimer = Stopwatch.createUnstarted();
             double total = 0;
@@ -394,9 +394,9 @@ public class CommonTest {
                 methodTimer.reset();
                 methodTimer.start();
 
-                
+
                 // Test collection random access
-                for(int i=0; i<randomAccessPoints.length;i++) {
+                for (int i = 0; i < randomAccessPoints.length; i++) {
                     int randomAccessPoint = randomAccessPoints[i];
                     double value = list.get(randomAccessPoint);
                     total += value;
@@ -405,7 +405,7 @@ public class CommonTest {
                 logger.info("{} took {} milliseconds to random access {} entries.", list.getClass().getCanonicalName(), methodTimer.elapsed(TimeUnit.MILLISECONDS), randomAccessPoints.length);
                 methodTimer.reset();
                 methodTimer.start();
-                
+
                 // Test collection traversal once more
                 valueIterator = list.iterator();
                 while (valueIterator.hasNext()) {
@@ -415,8 +415,8 @@ public class CommonTest {
                 methodTimer.stop();
                 logger.info("{} took {} milliseconds to traverse {} entries.", list.getClass().getCanonicalName(), methodTimer.elapsed(TimeUnit.MILLISECONDS), size);
                 methodTimer.reset();
-                
-                
+
+
                 collectionTimer.stop();
                 logger.info("{} took {} milliseconds total.", list.getClass().getCanonicalName(), collectionTimer.elapsed(TimeUnit.MILLISECONDS));
                 collectionTimer.reset();
@@ -429,16 +429,108 @@ public class CommonTest {
             logger.trace("Total: {}", total);
         }
     }
-    
-//    private Collection[] writeCollections(Class collectionClass, int numCollections, int dataSize, )
 
+    @Test
+    public void testObjectCollection() throws InstantiationException, IllegalAccessException {
+        System.out.println("");
+        System.out.println("");
+        System.out.println("********************************************");
+        System.out.println("********  Object Collection Test   *********");
+        System.out.println("********************************************");
+        System.out.println("");
+        System.out.println("");
+
+
+        for (int round = 0; round < 2; round++) {
+
+            double total = 0;
+            int size = 20000;
+            int objectSize = 20000;
+
+            DataGenerator dataGenerator = new DataGenerator();
+            BigObject[] values = dataGenerator.getBigObjects(size, objectSize);
+//            List<BigObject> shuffledValues = new ControlArrayList(size);
+            List<BigObject> shuffledValues = new ArrayList(size);
+            shuffledValues.addAll(Arrays.asList(values));
+            Collections.shuffle(shuffledValues);
+
+            List<Class> listClasses = new ArrayList();
+
+            listClasses.add(ArrayList.class);
+            listClasses.add(ArrayLinkList.class);
+            listClasses.add(LinkedList.class);
+            listClasses.add(CompactionList.class);
+            listClasses.add(ControlArrayList.class);
+            StaticControlConfigurator.setSize(size); // Used to configure the control array list.
+
+            Collections.shuffle(listClasses);
+
+
+            Stopwatch writeTimer = Stopwatch.createUnstarted();
+            Stopwatch traversalTimer = Stopwatch.createUnstarted();
+            Stopwatch findTimer = Stopwatch.createUnstarted();
+            Stopwatch totalTimer = Stopwatch.createUnstarted();
+
+            for (Class listClass : listClasses) {
+                
+                logger.info("Testing {}", listClass.newInstance().getClass().getCanonicalName());
+                
+                totalTimer.start();
+                writeTimer.start();
+                // test collection write.
+                List newList = (List) listClass.newInstance();
+                for (int j = 0; j < values.length; j++) {
+                    BigObject value = values[j];
+                    newList.add(value);
+                }
+                writeTimer.stop();
+
+                traversalTimer.start();
+                // Test collection traversal
+                Iterator<BigObject> valueIterator = newList.iterator();
+                while (valueIterator.hasNext()) {
+                    BigObject value = valueIterator.next();
+                    total += value.getId();
+                }
+                traversalTimer.stop();
+
+                findTimer.start();
+                Iterator<BigObject> accessIterator = shuffledValues.iterator();
+                while(accessIterator.hasNext()) {
+                    BigObject searchObject = accessIterator.next();
+                    int index = newList.indexOf(searchObject);
+                    total += index;
+                }
+                findTimer.stop();
+                totalTimer.stop();
+
+
+                logger.info("{} took {} milliseconds to write {} entries.", listClass.newInstance().getClass().getCanonicalName(), writeTimer.elapsed(TimeUnit.MILLISECONDS), size);
+                logger.info("{} took {} milliseconds to traverse {} entries.", listClass.newInstance().getClass().getCanonicalName(), traversalTimer.elapsed(TimeUnit.MILLISECONDS), size);
+                logger.info("{} took {} milliseconds to find {} entries.", listClass.newInstance().getClass().getCanonicalName(), findTimer.elapsed(TimeUnit.MILLISECONDS), size);
+                logger.info("{} took {} milliseconds total.", listClass.newInstance().getClass().getCanonicalName(), totalTimer.elapsed(TimeUnit.MILLISECONDS));
+                logger.info("");
+                
+                newList = null;
+
+                totalTimer.reset();
+                traversalTimer.reset();
+                writeTimer.reset();
+                findTimer.reset();
+                Runtime.getRuntime().gc();
+            }
+
+            logger.trace("Total: {}", total);
+        }
+    }
+
+//    private Collection[] writeCollections(Class collectionClass, int numCollections, int dataSize, )
 //    private void addCollection(Class clazz, Collection<Collection> destList, int num) throws InstantiationException, IllegalAccessException {
 //        for (int i = 0; i < num; i++) {
 //            Collection newCollection = (Collection) clazz.newInstance();
 //            destList.add(newCollection);
 //        }
 //    }
-
     // The faster map implementation requires further thought and revision before testing...
 //    @Test
     public void testMap() throws Exception {
