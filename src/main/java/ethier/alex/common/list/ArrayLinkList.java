@@ -4,7 +4,7 @@ import java.util.*;
 
 /**
 
- An implementation of collection. Should have much better write performance than ArrayLists, but will be slower during random access.
+ An implementation of List. Should have much better write performance than ArrayLists, but will be slower during random access.
 
  @author Alex Ethier
  */
@@ -51,57 +51,130 @@ public class ArrayLinkList<E> implements List<E> {
         totalSize++;
         return true;
     }
-    
-    /*TODO: ensure we have test cases for:
-    
-    index > total size
-    index < total size but is at last link
-    index < total size, is not at last link
-    
-    using this add method to fully populate the list (consider using a random insert generator).
-    */
-    
+
+    /* TODO: ensure we have test cases for:
+
+     index < total size but is at last link
+     index < total size, is not at last link
+
+     using this add method to fully populate the list (consider using a random insert generator).
+     */
     @Override
     public void add(int index, E element) {
-                
+        
+//        System.out.println("");
+//        System.out.println("Inserting element " + element + " at " + index);
+//        this.print();
+
+        if (index > totalSize || index < 0) {
+            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + totalSize);
+        }
+
         int count = index;
         ArrayLink tmpLink = firstLink;
-        while (count >= tmpLink.values.length) {
-            
-            //TODO: do the check for last link here and take appropriate action and returning rather than breaking the loop.
-            if(tmpLink.next == null) { // The insertion point is beyond the current max size of the List.
-                int newSize = Math.max(tmpLink.values.length, count);
-                newSize = (newSize*3)/2 + 1;
-                
-                writeLink.next = new ArrayLink(newSize);
-                writeLink = writeLink.next;
-                
-                // TODO:
-//                writeLink.values[0] = element;
-//                writeLinkOffset = 1;
-            }
-            
+        while (tmpLink != null && count > tmpLink.values.length) {
             count = count - tmpLink.values.length;
             tmpLink = tmpLink.next;
         }
-        
-        int remainingValues = count + totalSize -index; // The size of remaining elements in last link.
 
+        int shiftElements = tmpLink.values.length - count;
+
+        if (tmpLink.next == null) {// We are at the last link.
+            int remainingValues = count + totalSize - index; // The size of remaining elements in last link.
+            shiftElements = remainingValues - count;
+            if (remainingValues != writeLink.values.length) {// We do not need to resize the array.
+                System.arraycopy(tmpLink.values, count, tmpLink.values, count + 1, shiftElements);
+                tmpLink.values[count] = element;
+            } else { // The last link is full so shift an element over.
+                int newSize = (3 * writeLink.values.length) / 2 + 1;
+                ArrayLink newLink = new ArrayLink(newSize);
+
+                if (index == totalSize) { // If we happen to be inserting in the end.
+                    newLink.values[0] = element;
+                } else {
+//                    System.out.println("Last value: " + writeLink.values[remainingValues - 1]);
+                    newLink.values[0] = writeLink.values[remainingValues - 1];
+                    System.arraycopy(writeLink.values, count, writeLink.values, count + 1, shiftElements -1);
+                    tmpLink.values[count] = element;
+                }
+
+                writeLink.next = newLink;
+                writeLink = writeLink.next;
+                writeLinkOffset = 1;
+            }
+        } else {
+            Object[] newValues = new Object[tmpLink.values.length + 1];
+
+            System.arraycopy(tmpLink.values, 0, newValues, 0, count);
+            System.arraycopy(tmpLink.values, count, newValues, count + 1, shiftElements);
+            tmpLink.values = newValues;
+            tmpLink.values[count] = element;
+        }
+
+        totalSize++;
+        modCount++;
+        
+//        this.print();
+    }
+    
+    // Do not support
+    @Override
+    public E remove(int index) {
+        if(index >= totalSize) {
+            throw new IndexOutOfBoundsException("Index: "+index+", Size: "+totalSize);
+        }
+        
+        modCount++;
+        
+        int count = index;
+        ArrayLink tmpLink = firstLink;
+        while (count >= tmpLink.values.length) {
+            count = count - tmpLink.values.length;
+            tmpLink = tmpLink.next;
+        }
+               
+        System.out.println("");
+        System.out.println("Total Size: " + totalSize + " Index: " + index + " count " + count);
+        this.print();
 //        
-//        
-//        
-//        if(count < remainingValues) { // We have to shift some elements to the right
-//            if(tmpLink.values.length == remainingValues ) { // If the last link happens to be full
-//                 int newSize = (tmpLink.values.length * 3) / 2 + 1;
-//            }
-//             System.arraycopy(tmpLink.values, count, tmpLink.values, index+1, remainingValues - count);
-//             tmpLink.values[index] = element;
-//        } else { // The index is beyond total size, no elements need to be shifted.
+        E oldValue = (E) tmpLink.values[count];
+        System.out.println("Removing value: " + oldValue);
+        
+        Object[] newValues = new Object[tmpLink.values.length - 1];
+        System.arraycopy(tmpLink.values, 0, newValues, 0, count);
+        System.arraycopy(tmpLink.values, count+1, newValues, count, newValues.length - count);
+        tmpLink.values = newValues;   
+        this.print();
+        --totalSize;
+//        System.out.println("Removing value: " + oldValue);
+//        int numMoved = remainder - count;
+//        System.out.println("Remainder: " + remainder);
+//        System.out.println("Num Moved: " + numMoved);
+//        if(numMoved > 0) {
+//            Object[] newValues = new Object[tmpLink.values.length - 1];
 //            
+//            if(count > 0) {
+//                System.arraycopy(tmpLink.values, 0, newValues, 0, count);
+//            }
+//            System.arraycopy(tmpLink.values, count+1, newValues, count, numMoved);
+//            tmpLink.values = newValues;   
+//            --totalSize;
 //        }
         
+        return oldValue;
+    }
+    
+    // Convenience method for testing purposes only.
+    private void print() {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Content: ");
+        ArrayLink tmpLink = firstLink;
+        while(tmpLink != null) {
+            stringBuilder.append(Arrays.toString(tmpLink.values)).append(" -> ");
+            tmpLink = tmpLink.next;
+        }
         
-        throw new UnsupportedOperationException("Not supported yet.");
+        System.out.println(stringBuilder.toString());
     }
 
     @Override
@@ -127,10 +200,10 @@ public class ArrayLinkList<E> implements List<E> {
 
     @Override
     public E get(int index) {
-        if(index > totalSize) {
+        if (index > totalSize) {
             throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + totalSize);
         }
-        
+
         ArrayLink tmpLink = firstLink;
         while (index >= tmpLink.values.length) {
             index = index - tmpLink.values.length;
@@ -155,6 +228,8 @@ public class ArrayLinkList<E> implements List<E> {
      */
     @Override
     public boolean addAll(Collection<? extends E> c) {
+        // Implementing method 1.
+
         Object[] newArray = c.toArray();
 
         int additionalSize = newArray.length;
@@ -187,11 +262,15 @@ public class ArrayLinkList<E> implements List<E> {
 
         ArrayLink link = firstLink;
         int offset = 0;
-        while (link.next != null) {
+        int remainder = totalSize;
+        while (remainder > link.values.length) {
             System.arraycopy(link.values, 0, returnArray, offset, link.values.length);
             offset += link.values.length;
+            remainder = totalSize - offset;
             link = link.next;
         }
+        // We are on the last link now.
+        System.arraycopy(link.values, 0, returnArray, offset, remainder);   
 
         return returnArray;
     }
@@ -205,34 +284,34 @@ public class ArrayLinkList<E> implements List<E> {
 
     @Override
     public int indexOf(Object o) {
-        
+
         ArrayLink tmpLink = firstLink;
         int totalOffset = 0;
         int linkOffset = 0;
-        if(o == null) {
+        if (o == null) {
             while (totalOffset < totalSize) {
-                if(linkOffset == tmpLink.values.length) {
+                if (linkOffset == tmpLink.values.length) {
                     tmpLink = tmpLink.next;
                     linkOffset = 0;
                 } else {
-                    if(tmpLink.values[linkOffset] == null) {
+                    if (tmpLink.values[linkOffset] == null) {
                         return totalOffset;
                     }
-                    
+
                     totalOffset++;
                     linkOffset++;
                 }
             }
         } else {
             while (totalOffset < totalSize) {
-                if(linkOffset == tmpLink.values.length) {
+                if (linkOffset == tmpLink.values.length) {
                     tmpLink = tmpLink.next;
                     linkOffset = 0;
                 } else {
-                    if(tmpLink.values[linkOffset].equals(o)) {
+                    if (tmpLink.values[linkOffset].equals(o)) {
                         return totalOffset;
                     }
-                    
+
                     totalOffset++;
                     linkOffset++;
                 }
@@ -303,14 +382,6 @@ public class ArrayLinkList<E> implements List<E> {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    // Do not support
-    @Override
-    public E remove(int index) {
-        throw new UnsupportedOperationException("Not supported yet.");
-
-
-    }
-
     /**
 
      Iterator
@@ -339,10 +410,10 @@ public class ArrayLinkList<E> implements List<E> {
         public E next() {
 
             checkModCount();
-            if(totalCurrentOffset >= totalSize) {
+            if (totalCurrentOffset >= totalSize) {
                 throw new NoSuchElementException();
             }
-            
+
             totalCurrentOffset++;
 
             if (linkOffset < linkPointer.values.length) {

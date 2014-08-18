@@ -1,0 +1,196 @@
+package ethier.alex.common.test.functionality;
+
+import ethier.alex.common.list.ArrayLinkList;
+import ethier.alex.common.list.CompactionList;
+import ethier.alex.common.test.performance.DataGenerator;
+import java.util.*;
+import junit.framework.Assert;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+/**
+
+ Tests validating operation of new data structures.
+
+ @author alex
+ */
+public class FunctionalityTest {
+
+    // TEST CASE TODOS:
+    // Fail fast under concurrent modification.
+    // addAll (both cases)
+    private static Logger logger = LogManager.getLogger(FunctionalityTest.class);
+
+    @BeforeClass
+    public static void setUpClass() {
+//        BasicConfigurator.configure();
+    }
+
+    private void checkAddIndividually(Object[] values, List list) {
+        for (int i = 0; i < values.length; i++) {
+            Object value = values[i];
+            Assert.assertTrue(list.add(value));
+        }
+    }
+
+    private void checkIteration(Object[] values, List list) {
+        Iterator<Object> it = list.iterator();
+        int count = 0;
+        while (it.hasNext()) {
+            Object value = it.next();
+            
+            if(value == null) {
+                System.out.println("Content: " + Arrays.toString(list.toArray()));
+                System.out.println("Size: " + list.size());
+            }
+            
+            if(values == null) {
+                System.out.println("Values is null");
+            }
+            
+            if(values[count] == null) {
+                System.out.println("Values count is null at: " + count);
+            }
+            
+            if(!value.equals(values[count])) {
+                System.out.println("TEST WILL FAIL: control value=" + values[count] + " list value=" + value);
+                // The error is due to the compaction list reading from its own compaction array instead of the underlying super.array
+                // Removing compactionList's array will solve this issue.
+            }
+
+            Assert.assertTrue(value.equals(values[count]));
+            count++;
+        }
+
+        Assert.assertTrue(values.length == count);
+    }
+
+    private void checkRandomAccess(Object[] values, List list) {
+        for(int i = 0; i < values.length; i++) {
+            int randAccessPoint = (int) (Math.random() * values.length);
+            Assert.assertTrue(list.get(randAccessPoint).equals(values[randAccessPoint]));
+        }
+    }
+    
+    // Returns the control list that should be identical.
+    private List<Object> checkInsert(Object[] values, List list) {
+        
+        List controlList = new ArrayList();
+        
+        for(int i=0; i<values.length; i++) {
+            list.add(i, values[i]);
+            controlList.add(i, values[i]);
+        }
+        
+        for(int i=0; i<values.length; i++) {
+            int randInsertPoint = (int) (Math.random() * controlList.size());
+            list.add(randInsertPoint, values[i]);
+            controlList.add(randInsertPoint, values[i]);
+        }
+        
+        return controlList;
+    }
+    
+    private List<Object> checkRemoval(List list, int num) {
+        List controlList = new ArrayList();
+        controlList.addAll(list);
+        
+        for(int i=0; i<num; i++) {
+            int randRemovePoint = (int) (Math.random() * controlList.size());
+            Object controlRemoved = controlList.remove(randRemovePoint);
+            System.out.println("Control removed: " + controlRemoved);
+            list.remove(randRemovePoint);
+        }
+        
+        return controlList;
+    }
+
+    private void checkIndexOf(Object[] uniqueValues, List list) {
+
+        for (int i = 0; i < 50; i++) {
+            int randAccessPoint = (int) (Math.random() * uniqueValues.length);
+            Object randomObject = uniqueValues[randAccessPoint];
+
+            Assert.assertTrue(list.indexOf(randomObject) == randAccessPoint);
+        }
+    }
+    
+    private void checkToArray(Object[] values, List list) {
+        Object[] listArray = list.toArray();
+        for(int i=0; i<listArray.length; i++) {
+            Assert.assertTrue(listArray[i].equals(values[i]));
+        }
+        
+        Assert.assertTrue(values.length == listArray.length);
+    }
+
+    @Test
+    public void testLists() throws InstantiationException, IllegalAccessException, Exception {
+        System.out.println("");
+        System.out.println("");
+        System.out.println("********************************************");
+        System.out.println("********    Ethier Array Test     *********");
+        System.out.println("********************************************");
+        System.out.println("");
+        System.out.println("");
+
+        List<Class> listClasses = new ArrayList();
+        listClasses.add(ArrayList.class);
+        listClasses.add(ArrayLinkList.class);
+        listClasses.add(CompactionList.class);
+//        listClasses.add(ControlArrayList.class);
+
+        int largeSize = 10000;
+        DataGenerator dataGenerator = new DataGenerator();
+//        Object[] values = dataGenerator.getDoubles(largeSize);
+        Object[] largeValues = dataGenerator.getIntegers(largeSize, 10);
+
+        int smallSize = 2;
+        Object[] smallValues = dataGenerator.getDoubles(smallSize);
+        
+        int mediumSize = 33;
+        Object[] mediumValues = dataGenerator.getIntegers(mediumSize, 10);
+
+        Set<Object> uniqueSet = new HashSet<Object>();
+        uniqueSet.addAll(Arrays.asList(largeValues));
+        Object[] unqiueValues = uniqueSet.toArray();
+
+        for (Class listClass : listClasses) {
+
+            try {
+                logger.info("Testing Functionality for: " + listClass.getCanonicalName());
+
+                List testList = (List) listClass.newInstance();
+
+                this.checkAddIndividually(largeValues, testList);
+                this.checkIteration(largeValues, testList);
+                this.checkRandomAccess(largeValues, testList);
+                this.checkToArray(largeValues, testList);
+
+                List uniqueTestList = (List) listClass.newInstance();
+                this.checkAddIndividually(unqiueValues, uniqueTestList);
+                this.checkIndexOf(unqiueValues, uniqueTestList);
+
+                List smallTestList = (List) listClass.newInstance();
+                this.checkAddIndividually(smallValues, smallTestList);
+                this.checkIteration(smallValues, smallTestList);
+                this.checkRandomAccess(smallValues, smallTestList);
+                this.checkToArray(smallValues, smallTestList);
+                
+                List testInsertList = (List) listClass.newInstance();
+                List controlList = this.checkInsert(mediumValues, testInsertList);
+                this.checkIteration(controlList.toArray(), testInsertList);
+                
+                List removeList = (List) listClass.newInstance();
+                this.checkAddIndividually(mediumValues, removeList);
+                controlList = this.checkRemoval(removeList, (mediumSize/2));
+                this.checkIteration(controlList.toArray(), removeList);
+            } catch (Exception e) {
+                logger.error("List class: {} failed test.", listClass.getCanonicalName());
+                throw(e);
+            }
+        }
+    }
+}

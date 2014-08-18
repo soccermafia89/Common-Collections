@@ -10,13 +10,15 @@ import java.util.NoSuchElementException;
 
 /**
 
- An implementation of collection. Should have much better write performance than an ArrayList while retaining read performance.
+ An implementation of List. Should have much better write performance than an ArrayList while retaining read performance.
+
+TODO: override insert and remove if they are running slower (match new implementation to arraylist after calling a compaction).
 
  @author Alex Ethier
  */
 public class CompactionList<E> extends ArrayLinkList<E> {
 
-    Object[] compactArray;
+    Object[] compactArray;// Consider removing this pointer and instead using super.firstLink
 
     @Override
     public E get(int index) {
@@ -32,7 +34,7 @@ public class CompactionList<E> extends ArrayLinkList<E> {
     public Iterator<E> iterator() {
         compact();
         if (compactArray == null) { // Consider corner case where compaction hasn't occurred yet.
-            return new CompactionIterator();
+            return super.iterator();
         }
         return new CompactionIterator();
     }
@@ -65,22 +67,8 @@ public class CompactionList<E> extends ArrayLinkList<E> {
 
     @Override
     public Object[] toArray() {
-        Object[] returnArray = new Object[totalSize];
-
-        ArrayLink link = firstLink;
-        int offset = 0;
-        while (link.next != null) {
-            System.arraycopy(link.values, 0, returnArray, offset, link.values.length);
-            offset += link.values.length;
-            link = link.next;
-        }
-
-        // Use this oppurtunity as a free compaction (that also shrinks the array).
-        ArrayLink compactLink = new ArrayLink(returnArray);
-        firstLink = compactLink;
-        writeLink = compactLink;
-
-        return returnArray;
+        this.compact();
+        return super.toArray();
     }
 
     @Override
@@ -121,7 +109,7 @@ public class CompactionList<E> extends ArrayLinkList<E> {
 
         @Override
         public boolean hasNext() {
-            return offset < CompactionList.super.totalSize;
+            return offset != CompactionList.super.totalSize;
         }
 
         @Override

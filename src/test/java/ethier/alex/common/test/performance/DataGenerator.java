@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package ethier.alex.common.test.utils;
+package ethier.alex.common.test.performance;
 
 /**
 
@@ -14,8 +14,8 @@ public class DataGenerator {
     public DataGenerator() {
     }
     
-    public double[] getDoubles(int size) {
-        double[] doubles = new double[size];
+    public Double[] getDoubles(int size) {
+        Double[] doubles = new Double[size];
         
         for(int i=0; i<size; i++) {
             doubles[i] = Math.random();
@@ -24,8 +24,8 @@ public class DataGenerator {
         return doubles;
     }
     
-    public int[] getIntegers(int numNumbers, int maxSize) {
-        int[] integers = new int[numNumbers];
+    public Integer[] getIntegers(int numNumbers, int maxSize) {
+        Integer[] integers = new Integer[numNumbers];
         
         for(int i=0; i<numNumbers; i++) {
             integers[i] = (int) (maxSize*Math.random());

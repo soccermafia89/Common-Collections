@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package ethier.alex.common.test.utils;
+package ethier.alex.common.test.performance;
 
 import org.apache.commons.lang3.RandomStringUtils;
 

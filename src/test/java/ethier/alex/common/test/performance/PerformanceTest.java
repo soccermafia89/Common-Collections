@@ -1,20 +1,15 @@
-package ethier.alex.common.test.drivers;
+package ethier.alex.common.test.performance;
 
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.Lists;
-import com.google.monitoring.runtime.instrumentation.common.com.google.common.collect.HashMultiset;
 import ethier.alex.common.list.ArrayLinkList;
 import ethier.alex.common.list.CompactionList;
 import ethier.alex.common.list.ControlArrayList;
 import ethier.alex.common.list.StaticControlConfigurator;
-import ethier.alex.common.map.EthierMap;
-import ethier.alex.common.test.utils.BigObject;
-import ethier.alex.common.test.utils.DataGenerator;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import junit.framework.Assert;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.github.jamm.MemoryMeter;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -24,7 +19,7 @@ import org.junit.Test;
 
  @author alex
  */
-public class CommonTest {
+public class PerformanceTest {
 
     // TEST CASE TODOS:
     // Large object test
@@ -32,106 +27,11 @@ public class CommonTest {
     // addAll (both cases)
     // toArray
     // indexOf
-    private static Logger logger = LogManager.getLogger(CommonTest.class);
+    private static Logger logger = LogManager.getLogger(PerformanceTest.class);
 
     @BeforeClass
     public static void setUpClass() {
 //        BasicConfigurator.configure();
-    }
-
-    @Test
-    public void testArrayLinkList() {
-        System.out.println("");
-        System.out.println("");
-        System.out.println("********************************************");
-        System.out.println("********    Ethier Array Test     *********");
-        System.out.println("********************************************");
-        System.out.println("");
-        System.out.println("");
-
-        int size = 1000000;
-//        int size = 5;
-
-        DataGenerator dataGenerator = new DataGenerator();
-        double[] values = dataGenerator.getDoubles(size);
-
-        ArrayLinkList<Double> ethierArrayDeque = new ArrayLinkList<Double>();
-        for (int i = 0; i < values.length; i++) {
-            double value = values[i];
-            ethierArrayDeque.add(value);
-        }
-        int count = 0;
-
-        logger.info("Checking values.");
-        Iterator<Double> it = ethierArrayDeque.iterator();
-        while (it.hasNext()) {
-            double value = it.next();
-
-            Assert.assertTrue(value == values[count]);
-            count++;
-        }
-
-        logger.info("Checking hasNext.");
-        it = ethierArrayDeque.iterator();
-        for (int i = 0; i < values.length; i++) {
-            Assert.assertTrue(it.hasNext());
-            it.next();
-        }
-        Assert.assertFalse(it.hasNext());
-
-        logger.info("Checking random access.");
-        for (int i = 0; i < values.length; i++) {
-            int randAccessPoint = (int) (Math.random() * values.length);
-            Assert.assertTrue(ethierArrayDeque.get(randAccessPoint) == values[randAccessPoint]);
-        }
-    }
-
-    @Test
-    public void testCompactionList() {
-        System.out.println("");
-        System.out.println("");
-        System.out.println("********************************************");
-        System.out.println("********      Compaction Test      *********");
-        System.out.println("********************************************");
-        System.out.println("");
-        System.out.println("");
-
-        int size = 1000000;
-//        int size = 5;
-
-        DataGenerator dataGenerator = new DataGenerator();
-        double[] values = dataGenerator.getDoubles(size);
-
-        CompactionList<Double> compactionList = new CompactionList<Double>();
-        for (int i = 0; i < values.length; i++) {
-            double value = values[i];
-            compactionList.add(value);
-        }
-        int count = 0;
-
-        logger.info("Checking values.");
-        Iterator<Double> it = compactionList.iterator();
-        while (it.hasNext()) {
-            double value = it.next();
-
-//            System.out.println("Compaction value:" + value + " real value: " + values[count]);
-            Assert.assertTrue(value == values[count]);
-            count++;
-        }
-
-        logger.info("Checking hasNext.");
-        it = compactionList.iterator();
-        for (int i = 0; i < values.length; i++) {
-            Assert.assertTrue(it.hasNext());
-            it.next();
-        }
-        Assert.assertFalse(it.hasNext());
-
-        logger.info("Checking random access.");
-        for (int i = 0; i < values.length; i++) {
-            int randAccessPoint = (int) (Math.random() * values.length);
-            Assert.assertTrue(compactionList.get(randAccessPoint) == values[randAccessPoint]);
-        }
     }
 
     @Test
@@ -143,13 +43,18 @@ public class CommonTest {
         System.out.println("********************************************");
         System.out.println("");
         System.out.println("");
+        
+//        System.out.println("Test memory measurer.");
+//        long bytes = MemoryMeasurer.measureBytes("test");
+//        System.out.println("Test size: " + bytes);
+//        MemoryMeter meter = new MemoryMeter();
 
 
         for (int round = 0; round < 2; round++) {
 
             int size = 20000000;
             DataGenerator dataGenerator = new DataGenerator();
-            double[] values = dataGenerator.getDoubles(size);
+            Double[] values = dataGenerator.getDoubles(size);
             Stopwatch methodTimer = Stopwatch.createUnstarted();
             Stopwatch collectionTimer = Stopwatch.createUnstarted();
             double total = 0;
@@ -206,7 +111,106 @@ public class CommonTest {
                 collectionTimer.stop();
                 logger.info("{} took {} milliseconds total.", collection.getClass().getCanonicalName(), collectionTimer.elapsed(TimeUnit.MILLISECONDS));
                 collectionTimer.reset();
+                
+//                Stopwatch memoryTimer = Stopwatch.createStarted();
+//                long byteUsage = meter.measureDeep(collection);
+//                memoryTimer.stop();
+//                logger.info("Used memory: {}, took {} milliseconds to compute.", byteUsage, memoryTimer.elapsed(TimeUnit.MILLISECONDS));
+//                memoryTimer.reset();
+                
+                it.remove();
+                Runtime.getRuntime().gc();
+                logger.info("");
+            }
 
+            logger.trace("Total: {}", total);
+        }
+    }
+    
+    @Test
+    public void testLargeMemory() {
+        System.out.println("");
+        System.out.println("");
+        System.out.println("********************************************");
+        System.out.println("********     Large Memory Test     *********");
+        System.out.println("********************************************");
+        System.out.println("");
+        System.out.println("");
+        
+//        System.out.println("Test memory measurer.");
+//        long bytes = MemoryMeasurer.measureBytes("test");
+//        System.out.println("Test size: " + bytes);
+        MemoryMeter meter = new MemoryMeter();
+
+
+        for (int round = 0; round < 2; round++) {
+
+            int size = 2000000;
+            DataGenerator dataGenerator = new DataGenerator();
+            Double[] values = dataGenerator.getDoubles(size);
+            Stopwatch methodTimer = Stopwatch.createUnstarted();
+            Stopwatch collectionTimer = Stopwatch.createUnstarted();
+            double total = 0;
+
+            List<Collection> collections = new ArrayList();
+
+            Collection arrayList = new ArrayList();
+            Collection arrayDeque = new ArrayDeque();
+            Collection arrayLinkList = new ArrayLinkList();
+            Collection controlList = new ControlArrayList(size);
+//            Collection multiset = HashMultiset.create();
+//            Collection googleArrayList = Lists.newArrayList();
+            Collection linkedList = new LinkedList();
+            Collection compactionList = new CompactionList();
+
+            collections.add(arrayDeque);
+            collections.add(arrayList);
+            collections.add(arrayLinkList);
+            collections.add(controlList);
+//            collections.add(multiset); // Takes way too long.
+//            collections.add(googleArrayList); // Wrapper for ArrayList
+            collections.add(linkedList);
+            collections.add(compactionList);
+
+
+            Collections.shuffle(collections);
+            Iterator<Collection> it = collections.iterator();
+            while (it.hasNext()) {
+                Collection collection = it.next();
+                collectionTimer.start();
+                methodTimer.start();
+
+                // Test collection creation and entry.
+                for (int i = 0; i < values.length; i++) {
+                    double value = values[i];
+                    collection.add(value);
+                }
+                methodTimer.stop();
+                logger.info("{} took {} milliseconds to enter {} entries.", collection.getClass().getCanonicalName(), methodTimer.elapsed(TimeUnit.MILLISECONDS), size);
+                methodTimer.reset();
+                methodTimer.start();
+
+                // Test collection traversal
+                Iterator<Double> valueIterator = collection.iterator();
+                while (valueIterator.hasNext()) {
+                    double value = valueIterator.next();
+                    total += value;
+                }
+                methodTimer.stop();
+                logger.info("{} took {} milliseconds to traverse {} entries.", collection.getClass().getCanonicalName(), methodTimer.elapsed(TimeUnit.MILLISECONDS), size);
+                methodTimer.reset();
+
+
+                collectionTimer.stop();
+                logger.info("{} took {} milliseconds total.", collection.getClass().getCanonicalName(), collectionTimer.elapsed(TimeUnit.MILLISECONDS));
+                collectionTimer.reset();
+                
+                Stopwatch memoryTimer = Stopwatch.createStarted();
+                long byteUsage = meter.measureDeep(collection);
+                memoryTimer.stop();
+                logger.info("Used memory: {}, took {} milliseconds to compute.", byteUsage, memoryTimer.elapsed(TimeUnit.MILLISECONDS));
+                memoryTimer.reset();
+                
                 it.remove();
                 Runtime.getRuntime().gc();
                 logger.info("");
@@ -249,10 +253,10 @@ public class CommonTest {
             int numCollections = 100000;
 
             DataGenerator dataGenerator = new DataGenerator();
-            double[][] data = new double[numCollections][size];
+            Double[][] data = new Double[numCollections][size];
             for (int i = 0; i < numCollections; i++) {
 
-                double[] values = dataGenerator.getDoubles(size);
+                Double[] values = dataGenerator.getDoubles(size);
                 data[i] = values;
             }
 
@@ -282,7 +286,7 @@ public class CommonTest {
 
                 for (int i = 0; i < numCollections; i++) {
                     Collection newCollection = (Collection) collectionClass.newInstance();
-                    double[] values = data[i];
+                    Double[] values = data[i];
                     for (int j = 0; j < values.length; j++) {
                         double value = values[j];
                         newCollection.add(value);
@@ -340,10 +344,10 @@ public class CommonTest {
 
         for (int round = 0; round < 2; round++) {
 
-            int size = 5000000;
+            int size = 1000000;
             DataGenerator dataGenerator = new DataGenerator();
-            double[] values = dataGenerator.getDoubles(size);
-            int[] randomAccessPoints = dataGenerator.getIntegers(10 * size, size);
+            Double[] values = dataGenerator.getDoubles(size);
+            Integer[] randomAccessPoints = dataGenerator.getIntegers(10 * size, size);
             Stopwatch methodTimer = Stopwatch.createUnstarted();
             Stopwatch collectionTimer = Stopwatch.createUnstarted();
             double total = 0;
@@ -382,6 +386,11 @@ public class CommonTest {
                 logger.info("{} took {} milliseconds to enter {} entries.", list.getClass().getCanonicalName(), methodTimer.elapsed(TimeUnit.MILLISECONDS), size);
                 methodTimer.reset();
                 methodTimer.start();
+                
+                //Memory measure test
+//                Footprint footPrint = ObjectGraphMeasurer.measure(list);
+                //TODO
+                //END
 
                 // Test collection traversal
                 Iterator<Double> valueIterator = list.iterator();
@@ -523,96 +532,96 @@ public class CommonTest {
             logger.trace("Total: {}", total);
         }
     }
-
-//    private Collection[] writeCollections(Class collectionClass, int numCollections, int dataSize, )
-//    private void addCollection(Class clazz, Collection<Collection> destList, int num) throws InstantiationException, IllegalAccessException {
-//        for (int i = 0; i < num; i++) {
-//            Collection newCollection = (Collection) clazz.newInstance();
-//            destList.add(newCollection);
-//        }
-//    }
-    // The faster map implementation requires further thought and revision before testing...
-//    @Test
-    public void testMap() throws Exception {
+    
+    @Test
+    public void testMutation() throws InstantiationException, IllegalAccessException {
         System.out.println("");
         System.out.println("");
         System.out.println("********************************************");
-        System.out.println("********         Map  Test         *********");
+        System.out.println("********       Mutation Test       *********");
         System.out.println("********************************************");
         System.out.println("");
         System.out.println("");
 
-        int size = 3500000;
 
-        DataGenerator dataGenerator = new DataGenerator();
-        double[] keys = dataGenerator.getDoubles(size);
-        double[] values = dataGenerator.getDoubles(size);
+        for (int round = 0; round < 2; round++) {
 
-        for (int rounds = 0; rounds < 3; rounds++) {
-            List<Double> shuffledKeysList = new ArrayList<Double>();
-            for (int i = 0; i < size; i++) {
-                shuffledKeysList.add(keys[i]);
+            double total = 0;
+            int size = 200000;
+            int insertionSize = 20000;
+
+            DataGenerator dataGenerator = new DataGenerator();
+            Integer[] values = dataGenerator.getIntegers(size, 20);
+            Integer[] insertionValues = dataGenerator.getIntegers(insertionSize, 9);
+            Integer[] insertionPoints = dataGenerator.getIntegers(insertionSize, size);
+//            List<BigObject> shuffledValues = new ControlArrayList(size);
+
+            List<Class> listClasses = new ArrayList();
+
+            listClasses.add(ArrayList.class);
+            listClasses.add(ArrayLinkList.class);
+            listClasses.add(LinkedList.class);
+            listClasses.add(CompactionList.class);
+//            listClasses.add(ControlArrayList.class);
+//            StaticControlConfigurator.setSize(size); // Used to configure the control array list.
+
+            Collections.shuffle(listClasses);
+
+
+            Stopwatch writeTimer = Stopwatch.createUnstarted();
+            Stopwatch insertionTimer = Stopwatch.createUnstarted();
+            Stopwatch traversalTimer = Stopwatch.createUnstarted();
+            Stopwatch totalTimer = Stopwatch.createUnstarted();
+
+            for (Class listClass : listClasses) {
+                
+                logger.info("Testing {}", listClass.newInstance().getClass().getCanonicalName());
+                
+                totalTimer.start();
+                writeTimer.start();
+                // test collection write.
+                List newList = (List) listClass.newInstance();
+                for (int j = 0; j < values.length; j++) {
+                    Object value = values[j];
+                    newList.add(value);
+                }
+                writeTimer.stop();
+                
+                insertionTimer.start();
+                for(int j=0; j<insertionValues.length;j++) {
+                    Object insertionValue = insertionValues[j];
+                    int insertionPoint = insertionPoints[j];
+                    newList.add(insertionPoint, insertionValue);
+                }
+                insertionTimer.stop();
+
+                traversalTimer.start();
+                // Test collection traversal
+                Iterator<Integer> valueIterator = newList.iterator();
+                while (valueIterator.hasNext()) {
+                    int value = (int) valueIterator.next();
+                    total += value;
+                }
+                traversalTimer.stop();
+                totalTimer.stop();
+
+
+                logger.info("{} took {} milliseconds to write {} entries.", listClass.newInstance().getClass().getCanonicalName(), writeTimer.elapsed(TimeUnit.MILLISECONDS), size);
+                logger.info("{} took {} milliseconds to insert {} entries.", listClass.newInstance().getClass().getCanonicalName(), insertionTimer.elapsed(TimeUnit.MILLISECONDS), insertionSize);
+                logger.info("{} took {} milliseconds to traverse {} entries.", listClass.newInstance().getClass().getCanonicalName(), traversalTimer.elapsed(TimeUnit.MILLISECONDS), size);
+                logger.info("{} took {} milliseconds total.", listClass.newInstance().getClass().getCanonicalName(), totalTimer.elapsed(TimeUnit.MILLISECONDS));
+                logger.info("");
+                
+                newList = null;
+
+                totalTimer.reset();
+                traversalTimer.reset();
+                writeTimer.reset();
+                insertionTimer.reset();
+                Runtime.getRuntime().gc();
             }
-            Collections.shuffle(shuffledKeysList);
 
-            double[] shuffledKeys = new double[size];
-            for (int i = 0; i < size; i++) {
-                double keyVal = shuffledKeysList.get(i);
-                shuffledKeys[i] = keyVal;
-            }
-
-            Stopwatch timer = Stopwatch.createUnstarted();
-            Map<Double, Double> javaUtilMap = new HashMap<Double, Double>();
-
-            timer.start();
-            for (int i = 0; i < size; i++) {
-
-                double key = keys[i];
-                double value = values[i];
-
-                javaUtilMap.put(key, value);
-            }
-            timer.stop();
-            logger.info("Java Util HashMap took {} milliseconds to enter {} entries.", timer.elapsed(TimeUnit.MILLISECONDS), size);
-            timer.reset();
-            timer.start();
-            for (int i = 0; i < size; i++) {
-                double key = shuffledKeys[i];
-                javaUtilMap.get(key);
-            }
-            timer.stop();
-            javaUtilMap = null;
-            Runtime.getRuntime().gc();
-
-            logger.info("Java Util HashMap took {} milliseconds to read {} entries.", timer.elapsed(TimeUnit.MILLISECONDS), size);
-
-            EthierMap ethierMap = new EthierMap<Double, Double>();
-
-            timer.reset();
-            timer.start();
-            for (int i = 0; i < size; i++) {
-
-                double key = keys[i];
-                double value = values[i];
-
-                ethierMap.put(key, value);
-            }
-            ethierMap.computeMap();
-            timer.stop();
-            logger.info("Ethier Map took {} milliseconds to input {} entries.", timer.elapsed(TimeUnit.MILLISECONDS), size);
-            timer.reset();
-            timer.start();
-            for (int i = 0; i < size; i++) {
-                double key = shuffledKeys[i];
-                ethierMap.get(key);
-            }
-            timer.stop();
-            ethierMap = null;
-            Runtime.getRuntime().gc();
-            logger.info("Ethier Map took {} milliseconds to read {} entries.", timer.elapsed(TimeUnit.MILLISECONDS), size);
+            logger.trace("Total: {}", total);
         }
-
-        logger.info("Done");
-
     }
 }
