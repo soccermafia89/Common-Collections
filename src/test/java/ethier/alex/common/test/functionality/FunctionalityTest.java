@@ -2,6 +2,7 @@ package ethier.alex.common.test.functionality;
 
 import ethier.alex.common.list.ArrayLinkList;
 import ethier.alex.common.list.CompactionList;
+import ethier.alex.common.list.MutationList;
 import ethier.alex.common.test.performance.DataGenerator;
 import java.util.*;
 import junit.framework.Assert;
@@ -138,7 +139,7 @@ public class FunctionalityTest {
         listClasses.add(ArrayList.class);
         listClasses.add(ArrayLinkList.class);
         listClasses.add(CompactionList.class);
-//        listClasses.add(Mutation);
+        listClasses.add(MutationList.class);
 //        listClasses.add(ControlArrayList.class);
 
         int largeSize = 10000;
