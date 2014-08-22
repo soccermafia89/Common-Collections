@@ -10,6 +10,6 @@ package ethier.alex.common.list;
  */
 public enum MutationType {
     
-    ADD, INSERT, REMOVE, BULKADD, BULKINSERT, BULKREMOVE;
+    INSERT, REMOVE;
     
 }

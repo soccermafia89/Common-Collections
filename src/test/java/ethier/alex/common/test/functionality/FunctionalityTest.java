@@ -55,9 +55,7 @@ public class FunctionalityTest {
             }
             
             if(!value.equals(values[count])) {
-                System.out.println("TEST WILL FAIL: control value=" + values[count] + " list value=" + value);
-                // The error is due to the compaction list reading from its own compaction array instead of the underlying super.array
-                // Removing compactionList's array will solve this issue.
+                System.out.println("Control value=" + values[count] + " list value=" + value);
             }
 
             Assert.assertTrue(value.equals(values[count]));
@@ -99,8 +97,8 @@ public class FunctionalityTest {
         
         for(int i=0; i<num; i++) {
             int randRemovePoint = (int) (Math.random() * controlList.size());
-            Object controlRemoved = controlList.remove(randRemovePoint);
-            System.out.println("Control removed: " + controlRemoved);
+            controlList.remove(randRemovePoint);
+//            System.out.println("Control removed: " + controlRemoved);
             list.remove(randRemovePoint);
         }
         
@@ -140,6 +138,7 @@ public class FunctionalityTest {
         listClasses.add(ArrayList.class);
         listClasses.add(ArrayLinkList.class);
         listClasses.add(CompactionList.class);
+//        listClasses.add(Mutation);
 //        listClasses.add(ControlArrayList.class);
 
         int largeSize = 10000;

@@ -12,7 +12,7 @@ public class ArrayLinkList<E> implements List<E> {
 
     private static final int initSize = 16;
     protected ArrayLink writeLink;
-    protected int writeLinkOffset;
+    protected int writeLinkOffset; // Where to write new values in the current writeLink's arraylist.
     protected int totalSize;
     protected int modCount; // Used for fail-fast iterators
     protected ArrayLink firstLink;
@@ -61,7 +61,7 @@ public class ArrayLinkList<E> implements List<E> {
      */
     @Override
     public void add(int index, E element) {
-        
+
 //        System.out.println("");
 //        System.out.println("Inserting element " + element + " at " + index);
 //        this.print();
@@ -94,7 +94,7 @@ public class ArrayLinkList<E> implements List<E> {
                 } else {
 //                    System.out.println("Last value: " + writeLink.values[remainingValues - 1]);
                     newLink.values[0] = writeLink.values[remainingValues - 1];
-                    System.arraycopy(writeLink.values, count, writeLink.values, count + 1, shiftElements -1);
+                    System.arraycopy(writeLink.values, count, writeLink.values, count + 1, shiftElements - 1);
                     tmpLink.values[count] = element;
                 }
 
@@ -113,67 +113,52 @@ public class ArrayLinkList<E> implements List<E> {
 
         totalSize++;
         modCount++;
-        
+
 //        this.print();
     }
-    
-    // Do not support
+
     @Override
     public E remove(int index) {
-        if(index >= totalSize) {
-            throw new IndexOutOfBoundsException("Index: "+index+", Size: "+totalSize);
+        if (index >= totalSize) {
+            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + totalSize);
         }
-        
+
         modCount++;
-        
+
         int count = index;
         ArrayLink tmpLink = firstLink;
         while (count >= tmpLink.values.length) {
             count = count - tmpLink.values.length;
             tmpLink = tmpLink.next;
         }
-               
+
         System.out.println("");
         System.out.println("Total Size: " + totalSize + " Index: " + index + " count " + count);
-        this.print();
+//        this.print();
 //        
         E oldValue = (E) tmpLink.values[count];
         System.out.println("Removing value: " + oldValue);
-        
+
         Object[] newValues = new Object[tmpLink.values.length - 1];
         System.arraycopy(tmpLink.values, 0, newValues, 0, count);
-        System.arraycopy(tmpLink.values, count+1, newValues, count, newValues.length - count);
-        tmpLink.values = newValues;   
-        this.print();
+        System.arraycopy(tmpLink.values, count + 1, newValues, count, newValues.length - count);
+        tmpLink.values = newValues;
+//        this.print();
         --totalSize;
-//        System.out.println("Removing value: " + oldValue);
-//        int numMoved = remainder - count;
-//        System.out.println("Remainder: " + remainder);
-//        System.out.println("Num Moved: " + numMoved);
-//        if(numMoved > 0) {
-//            Object[] newValues = new Object[tmpLink.values.length - 1];
-//            
-//            if(count > 0) {
-//                System.arraycopy(tmpLink.values, 0, newValues, 0, count);
-//            }
-//            System.arraycopy(tmpLink.values, count+1, newValues, count, numMoved);
-//            tmpLink.values = newValues;   
-//            --totalSize;
-//        }
-        
+
         return oldValue;
     }
-    
+
     // Convenience method for testing purposes only.
     private void print() {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("Content: ");
         ArrayLink tmpLink = firstLink;
-        while(tmpLink != null) {
+        while (tmpLink != null) {
             stringBuilder.append(Arrays.toString(tmpLink.values)).append(" -> ");
             tmpLink = tmpLink.next;
         }
-        
+
         System.out.println(stringBuilder.toString());
     }
 
@@ -270,7 +255,7 @@ public class ArrayLinkList<E> implements List<E> {
             link = link.next;
         }
         // We are on the last link now.
-        System.arraycopy(link.values, 0, returnArray, offset, remainder);   
+        System.arraycopy(link.values, 0, returnArray, offset, remainder);
 
         return returnArray;
     }

@@ -8,12 +8,10 @@ package ethier.alex.common.list;
 
  @author alex
  */
-public interface Mutation {
-    
-    public int getIndex();
-    
-    public Object getValue();
-    
-    public MutationType getType();
+public class ChangeNode {
+    protected int index;
+    protected MutationType mutationType;
+
+    protected Object value;
     
 }

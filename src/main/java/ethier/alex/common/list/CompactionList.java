@@ -18,7 +18,7 @@ TODO: override insert and remove if they are running slower (match new implement
  */
 public class CompactionList<E> extends ArrayLinkList<E> {
 
-    Object[] compactArray;// Consider removing this pointer and instead using super.firstLink
+//    Object[] compactArray;// Consider removing this pointer and instead using super.firstLink
 
     @Override
     public E get(int index) {
@@ -33,10 +33,7 @@ public class CompactionList<E> extends ArrayLinkList<E> {
     @Override
     public Iterator<E> iterator() {
         compact();
-        if (compactArray == null) { // Consider corner case where compaction hasn't occurred yet.
-            return super.iterator();
-        }
-        return new CompactionIterator();
+        return new CompactionIterator<E>();
     }
 
     // Compacts the underlying linklist into a single link with all elements within a single array.
@@ -47,7 +44,7 @@ public class CompactionList<E> extends ArrayLinkList<E> {
             ArrayLink link = super.firstLink;
 
             int newSize = (super.totalSize * 3) / 2 + 1;
-            compactArray = new Object[newSize];
+            Object[] compactArray = new Object[newSize];
             int offset = 0;
 
             while (link.next != null) {
@@ -121,7 +118,7 @@ public class CompactionList<E> extends ArrayLinkList<E> {
 
             int tmpPointer = offset;
             offset++;
-            return (E) compactArray[tmpPointer];
+            return (E) CompactionList.super.firstLink.values[tmpPointer];
         }
 
         @Override
