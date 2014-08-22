@@ -4,6 +4,7 @@
  */
 package ethier.alex.common.list;
 
+import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -22,11 +23,11 @@ import java.util.NoSuchElementException;
  */
 public class MutationList<E> extends ArrayLinkList<E> {
 
-    private int numMutations;
+    private int numInserts;
     private MutationNode mutationTreeRoot;
 
     public MutationList() {
-        numMutations = 0;
+        numInserts = 0;
 //        mutationTreeRoot = new MutationNode();
     }
 
@@ -42,70 +43,93 @@ public class MutationList<E> extends ArrayLinkList<E> {
 //    }
     @Override
     public void add(int index, E element) {
-        if (numMutations == 0) {
+        System.out.println("Insert called with index: " + index + " value: " + element);
+        
+        if (numInserts == 0) {
             mutationTreeRoot = new MutationNode();
             mutationTreeRoot.value = element;
             mutationTreeRoot.delta = index;
+            System.out.println("Element added to tree with value: " + element);
         } else {
             this.addToTree(index, element, mutationTreeRoot);
         }
 
         super.totalSize++;
-        numMutations++;
+        numInserts++;
     }
 
     private void addToTree(int delta, E element, MutationNode rootNode) {
 
-        delta = delta - mutationTreeRoot.delta;
+        delta = delta - rootNode.delta;
         if (delta > 0) {
 
-
-            if (mutationTreeRoot.rightChild == null) {
+            if (rootNode.rightChild == null) {
                 MutationNode newChild = new MutationNode();
                 newChild.delta = delta;
                 newChild.value = element;
-                mutationTreeRoot.rightChild = newChild;
+                rootNode.rightChild = newChild;
+                System.out.println("Element added to tree with value: " + element);
             } else {
-                this.addToTree(delta, element, mutationTreeRoot.rightChild);
+                this.addToTree(delta, element, rootNode.rightChild);
             }
         } else {
             rootNode.delta++;
 
-            if (mutationTreeRoot.leftChild == null) {
+            if (rootNode.leftChild == null) {
                 MutationNode newChild = new MutationNode();
                 newChild.delta = delta;
                 newChild.value = element;
-                mutationTreeRoot.rightChild = newChild;
+                rootNode.rightChild = newChild;
+                System.out.println("Element added to tree with value: " + element);
             } else {
-                this.addToTree(delta, element, mutationTreeRoot.leftChild);
+                this.addToTree(delta, element, rootNode.leftChild);
             }
         }
     }
 
     // Converts the write buffer mutationList into the read buffer compactArray
     private void compact() {
-        if (super.firstLink.next != null || numMutations > 0) {
+        if (super.firstLink.next != null || numInserts > 0) {
             System.out.println("Processing Compaction.");
+            System.out.println("Total size: " + super.totalSize);
+            System.out.println("Inserts: " + numInserts);
+            System.out.println("ArrayLinkList values: " + (super.totalSize - numInserts));
 
             int newSize = (super.totalSize * 3) / 2 + 1;
             Object[] compactArray = new Object[newSize];
 
             ChangeNode[] changeLog = null;
-            if (numMutations > 0) {
-                changeLog = new ChangeNode[numMutations];
+            if (numInserts > 0) {
+                changeLog = new ChangeNode[numInserts];
                 this.flattenTree(mutationTreeRoot, changeLog, 0, mutationTreeRoot.delta);
-                System.out.println("Change log flattened.");
+                /**
+                
+                TODO: Write an iterator to print out what the tree looks like.
+                
+                */
+                
+                
+                System.out.println("Change log flattened: " + Arrays.toString(changeLog));
                 mutationTreeRoot = null; // Clear the mutation tree.
-                numMutations = 0;
             }
 
             int changeLogCounter = 0; // Keep track of where in the changelog we are at.
             ArrayLink tmpLink = super.firstLink; // The arraylink we are traversing to do compaction.
             int arrayLinkListOffset = 0; // Keep track of the absolute position we are in for the array link list.
             int compactArrayOffset = 0; // Keep track of the write position for the compact array.
-            while (tmpLink != null) {
+            int arrayLinkListRemainder = super.totalSize - numInserts; // Remaining number of elements in array link list that need to be copied.
+            System.out.println("ArrayLinkList values: " + (super.totalSize - numInserts));
+            while (arrayLinkListRemainder != 0) {
+                System.out.println("Compacting next array link.");
+
                 int arrayLinkOffset = 0; // Keep track of the position we are in for a single link in the array link list.
                 arrayLinkListOffset += tmpLink.values.length;
+                System.out.println("New array link list offset: " + arrayLinkListOffset);
+
+                System.out.println("Change log: " + changeLog);
+                if (changeLog != null) {
+                    System.out.println("change log index: " + changeLog[changeLogCounter].index + " counter: " + changeLogCounter);
+                }
                 while (changeLog != null && changeLog[changeLogCounter].index < arrayLinkListOffset && changeLogCounter < changeLog.length) {
                     if (changeLog[changeLogCounter].mutationType == MutationType.INSERT) {
                         compactArray[compactArrayOffset] = changeLog[changeLogCounter].value;
@@ -124,23 +148,48 @@ public class MutationList<E> extends ArrayLinkList<E> {
                      */
 
                     //TODO: the last value in this copy may need a +/-1
+                    //TODO: Check to make sure the array link list actually has elements to copy.
+
                     int copyLength = changeLog[changeLogCounter].index - arrayLinkOffset;
-                    System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, copyLength);
+                    if (copyLength > arrayLinkListRemainder) {
+                        System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, copyLength);
+                        arrayLinkListRemainder -= copyLength;
+                        compactArrayOffset += copyLength;
+                    } else {
+                        System.out.println("Array linked list remainder: " + arrayLinkListRemainder);
+                        System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, arrayLinkListRemainder);
+                        arrayLinkListRemainder = 0;
+                        compactArrayOffset += arrayLinkListRemainder;
+                        //TODO: Add break statements to allow faster completion.
+                    }
                     arrayLinkOffset += copyLength;
-                    compactArrayOffset += copyLength;
 
                     changeLogCounter++;
                 }
 
+                System.out.println("Copying remaining arraylist elements.");
                 // Now copy remaining elements in array link list after the last change log index that appears in the given array link.
-                System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, tmpLink.values.length - arrayLinkOffset);
-                
+                int copyLength = tmpLink.values.length - arrayLinkOffset;
+                if (copyLength > arrayLinkListRemainder) {
+                    System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, copyLength);
+                    arrayLinkListRemainder -= copyLength;
+                    compactArrayOffset += copyLength;
+                } else {
+                    System.out.println("Array linked list remainder: " + arrayLinkListRemainder);
+                    System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, arrayLinkListRemainder);
+                    arrayLinkListRemainder = 0;
+                    compactArrayOffset += arrayLinkListRemainder;
+                    //TODO: Add break statements to allow faster completion.
+                }
+
                 tmpLink = tmpLink.next;
+                System.out.println("Compacted Content: " + Arrays.toString(compactArray));
             }
 
             // Apply any change log values occurring after the array link list has been fully copied over.
-            // Any remove value encounterd is an internal error.
+            // Any remove mutation encountered is an internal error.
             while (changeLog != null && changeLogCounter < changeLog.length) {
+                System.out.println("Change log counter: " + changeLogCounter + " object: " + changeLog[changeLogCounter]);
                 compactArray[compactArrayOffset] = changeLog[changeLogCounter].value;
                 compactArrayOffset++;
                 changeLogCounter++;
@@ -150,22 +199,29 @@ public class MutationList<E> extends ArrayLinkList<E> {
             super.firstLink = tmpLink;
             super.writeLink = tmpLink;
             super.writeLinkOffset = super.totalSize;
+            
+            numInserts = 0; // Don't forget to reset the number of mutations.
         }
     }
 
     //TODO: Change the writeArray type to a changelog node.
-    private void flattenTree(MutationNode rootNode, ChangeNode[] writeArray, int offset, int index) {
+    private int flattenTree(MutationNode rootNode, ChangeNode[] writeArray, int offset, int index) {
+        System.out.println("Flatten tree called with write offset: " + offset);
+        
         if (rootNode.leftChild != null) {
-            this.flattenTree(rootNode.leftChild, writeArray, offset++, index + rootNode.leftChild.delta);
+            offset += this.flattenTree(rootNode.leftChild, writeArray, offset, index + rootNode.leftChild.delta);
         }
         ChangeNode changeNode = new ChangeNode();
         changeNode.index = index;
         changeNode.value = rootNode.value;
         changeNode.mutationType = rootNode.mutationType;
         writeArray[offset] = changeNode;
+        offset++;
         if (rootNode.rightChild != null) {
-            this.flattenTree(rootNode.rightChild, writeArray, offset++, index + rootNode.rightChild.delta);
+            offset += this.flattenTree(rootNode.rightChild, writeArray, offset, index + rootNode.rightChild.delta);
         }
+        
+        return offset;
     }
 
     /**

@@ -142,7 +142,8 @@ public class FunctionalityTest {
         listClasses.add(MutationList.class);
 //        listClasses.add(ControlArrayList.class);
 
-        int largeSize = 10000;
+//        int largeSize = 10000;
+        int largeSize = 10;
         DataGenerator dataGenerator = new DataGenerator();
 //        Object[] values = dataGenerator.getDoubles(largeSize);
         Object[] largeValues = dataGenerator.getIntegers(largeSize, 10);
@@ -160,29 +161,37 @@ public class FunctionalityTest {
         for (Class listClass : listClasses) {
 
             try {
-                logger.info("Testing Functionality for: " + listClass.getCanonicalName());
+                logger.info("Testing Functionality for: {}", listClass.getCanonicalName());
 
                 List testList = (List) listClass.newInstance();
 
+                logger.info("Testing add.");
                 this.checkAddIndividually(largeValues, testList);
+                logger.info("Testing traversal.");
                 this.checkIteration(largeValues, testList);
+                logger.info("Testing random access.");
                 this.checkRandomAccess(largeValues, testList);
                 this.checkToArray(largeValues, testList);
 
                 List uniqueTestList = (List) listClass.newInstance();
                 this.checkAddIndividually(unqiueValues, uniqueTestList);
+                logger.info("Testing index of.");
                 this.checkIndexOf(unqiueValues, uniqueTestList);
 
+                logger.info("Testing small list corner case.");
                 List smallTestList = (List) listClass.newInstance();
                 this.checkAddIndividually(smallValues, smallTestList);
                 this.checkIteration(smallValues, smallTestList);
                 this.checkRandomAccess(smallValues, smallTestList);
                 this.checkToArray(smallValues, smallTestList);
                 
+                logger.info("Testing insertion.");
                 List testInsertList = (List) listClass.newInstance();
                 List controlList = this.checkInsert(mediumValues, testInsertList);
+                logger.info("Iterating post insertion.");
                 this.checkIteration(controlList.toArray(), testInsertList);
                 
+                logger.info("Testing removal.");
                 List removeList = (List) listClass.newInstance();
                 this.checkAddIndividually(mediumValues, removeList);
                 controlList = this.checkRemoval(removeList, (mediumSize/2));
