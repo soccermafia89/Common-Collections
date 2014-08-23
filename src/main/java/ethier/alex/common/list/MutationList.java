@@ -43,44 +43,67 @@ public class MutationList<E> extends ArrayLinkList<E> {
 //    }
     @Override
     public void add(int index, E element) {
+        System.out.println("");
         System.out.println("Insert called with index: " + index + " value: " + element);
         
         if (numInserts == 0) {
             mutationTreeRoot = new MutationNode();
             mutationTreeRoot.value = element;
             mutationTreeRoot.delta = index;
-            System.out.println("Element added to tree with value: " + element);
+            System.out.println("Element added to tree with value: " + element + " with node delta: " + mutationTreeRoot.delta);
         } else {
             this.addToTree(index, element, mutationTreeRoot);
         }
 
         super.totalSize++;
         numInserts++;
+        
+        printTree();
+    }
+    
+    // To be used for internal testing only.
+    private void printTree() {
+        this.printTreeNode(mutationTreeRoot, "O", 0);
+    }
+    
+    private void printTreeNode(MutationNode rootNode, String history, int index) {
+        if(rootNode.leftChild != null) {
+            printTreeNode(rootNode.leftChild, history + "L", index);
+        }
+        System.out.println(history + "=" + rootNode.value + " delta=" + rootNode.delta + " index=" + (index + rootNode.delta));
+        if(rootNode.rightChild != null) {
+            printTreeNode(rootNode.rightChild, history + "R", index + rootNode.delta);
+        }
     }
 
     private void addToTree(int delta, E element, MutationNode rootNode) {
 
-        delta = delta - rootNode.delta;
-        if (delta > 0) {
+        System.out.println("Current delta: " + delta + " node delta: " + rootNode.delta);
+        
+        if (delta > rootNode.delta) { 
+            int newDelta = delta - rootNode.delta;
+            System.out.println("Appending to right side.");
 
             if (rootNode.rightChild == null) {
                 MutationNode newChild = new MutationNode();
-                newChild.delta = delta;
+                newChild.delta = newDelta;
                 newChild.value = element;
                 rootNode.rightChild = newChild;
-                System.out.println("Element added to tree with value: " + element);
+                System.out.println("Element added to tree with value: " + element + " with node delta: " + delta);
             } else {
-                this.addToTree(delta, element, rootNode.rightChild);
+                this.addToTree(newDelta, element, rootNode.rightChild);
             }
         } else {
-            rootNode.delta++;
+            System.out.println("Appending to left side.");
+    
+            rootNode.delta++; // Only when appending the child to the left do we increment the root delta.
 
             if (rootNode.leftChild == null) {
                 MutationNode newChild = new MutationNode();
                 newChild.delta = delta;
                 newChild.value = element;
-                rootNode.rightChild = newChild;
-                System.out.println("Element added to tree with value: " + element);
+                rootNode.leftChild = newChild;
+                System.out.println("Element added to tree with value: " + element + " with node delta: " + delta);
             } else {
                 this.addToTree(delta, element, rootNode.leftChild);
             }
@@ -101,7 +124,7 @@ public class MutationList<E> extends ArrayLinkList<E> {
             ChangeNode[] changeLog = null;
             if (numInserts > 0) {
                 changeLog = new ChangeNode[numInserts];
-                this.flattenTree(mutationTreeRoot, changeLog, 0, mutationTreeRoot.delta);
+                this.flattenTree(mutationTreeRoot, changeLog, 0, 0);
                 /**
                 
                 TODO: Write an iterator to print out what the tree looks like.
@@ -112,6 +135,13 @@ public class MutationList<E> extends ArrayLinkList<E> {
                 System.out.println("Change log flattened: " + Arrays.toString(changeLog));
                 mutationTreeRoot = null; // Clear the mutation tree.
             }
+            
+            System.out.print("Change log value list: [");
+            for(int i=0; i < changeLog.length; i++) {
+                ChangeNode changeNode = changeLog[i];
+                System.out.print(changeNode.value);
+            }
+            System.out.println("]");
 
             int changeLogCounter = 0; // Keep track of where in the changelog we are at.
             ArrayLink tmpLink = super.firstLink; // The arraylink we are traversing to do compaction.
@@ -206,19 +236,20 @@ public class MutationList<E> extends ArrayLinkList<E> {
 
     //TODO: Change the writeArray type to a changelog node.
     private int flattenTree(MutationNode rootNode, ChangeNode[] writeArray, int offset, int index) {
-        System.out.println("Flatten tree called with write offset: " + offset);
+//        System.out.println("Flatten tree called with write offset: " + offset);
         
         if (rootNode.leftChild != null) {
-            offset += this.flattenTree(rootNode.leftChild, writeArray, offset, index + rootNode.leftChild.delta);
+            offset = this.flattenTree(rootNode.leftChild, writeArray, offset, index);
         }
         ChangeNode changeNode = new ChangeNode();
-        changeNode.index = index;
+        changeNode.index = index + rootNode.delta;
         changeNode.value = rootNode.value;
         changeNode.mutationType = rootNode.mutationType;
         writeArray[offset] = changeNode;
+        System.out.println("Writing value: " + changeNode.value + " to offset: " + offset + " with index: " + changeNode.index);
         offset++;
         if (rootNode.rightChild != null) {
-            offset += this.flattenTree(rootNode.rightChild, writeArray, offset, index + rootNode.rightChild.delta);
+            offset = this.flattenTree(rootNode.rightChild, writeArray, offset, index + rootNode.delta);
         }
         
         return offset;

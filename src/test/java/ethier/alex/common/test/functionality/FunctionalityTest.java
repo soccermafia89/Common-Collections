@@ -78,10 +78,10 @@ public class FunctionalityTest {
         
         List controlList = new ArrayList();
         
-        for(int i=0; i<values.length; i++) {
-            list.add(i, values[i]);
-            controlList.add(i, values[i]);
-        }
+//        for(int i=0; i<values.length; i++) {
+//            list.add(i, values[i]);
+//            controlList.add(i, values[i]);
+//        }
         
         for(int i=0; i<values.length; i++) {
             int randInsertPoint = (int) (Math.random() * controlList.size());
@@ -151,7 +151,7 @@ public class FunctionalityTest {
         int smallSize = 2;
         Object[] smallValues = dataGenerator.getDoubles(smallSize);
         
-        int mediumSize = 33;
+        int mediumSize = 10;
         Object[] mediumValues = dataGenerator.getIntegers(mediumSize, 10);
 
         Set<Object> uniqueSet = new HashSet<Object>();
