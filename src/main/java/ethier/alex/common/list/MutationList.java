@@ -45,7 +45,7 @@ public class MutationList<E> extends ArrayLinkList<E> {
     public void add(int index, E element) {
         System.out.println("");
         System.out.println("Insert called with index: " + index + " value: " + element);
-        
+
         if (numInserts == 0) {
             mutationTreeRoot = new MutationNode();
             mutationTreeRoot.value = element;
@@ -57,30 +57,39 @@ public class MutationList<E> extends ArrayLinkList<E> {
 
         super.totalSize++;
         numInserts++;
-        
+
         printTree();
     }
-    
+
     // To be used for internal testing only.
     private void printTree() {
         this.printTreeNode(mutationTreeRoot, "O", 0);
     }
-    
+
     private void printTreeNode(MutationNode rootNode, String history, int index) {
-        if(rootNode.leftChild != null) {
+        if (rootNode.leftChild != null) {
             printTreeNode(rootNode.leftChild, history + "L", index);
         }
         System.out.println(history + "=" + rootNode.value + " delta=" + rootNode.delta + " index=" + (index + rootNode.delta));
-        if(rootNode.rightChild != null) {
+        if (rootNode.rightChild != null) {
             printTreeNode(rootNode.rightChild, history + "R", index + rootNode.delta);
         }
     }
 
+    // The change tree is implemented as follows:
+    // An objects initial delta is its index value.
+    // To traverse the tree compare the added object's delta with the current root delta.
+    // If the child's delta is larger, add to the right and subtract the root node delta from the child.
+    // If the child's delta is smaller or equal, increment the root node delta by one.
+    // To calculate a child's index value from the deltas:
+    // If you move to a right child, append the delta to the current delta.
+    // If you move to a left child, do not append any delta.
+    // When returning the node's index value, append the node's delta.
     private void addToTree(int delta, E element, MutationNode rootNode) {
 
         System.out.println("Current delta: " + delta + " node delta: " + rootNode.delta);
-        
-        if (delta > rootNode.delta) { 
+
+        if (delta > rootNode.delta) {
             int newDelta = delta - rootNode.delta;
             System.out.println("Appending to right side.");
 
@@ -95,7 +104,7 @@ public class MutationList<E> extends ArrayLinkList<E> {
             }
         } else {
             System.out.println("Appending to left side.");
-    
+
             rootNode.delta++; // Only when appending the child to the left do we increment the root delta.
 
             if (rootNode.leftChild == null) {
@@ -125,23 +134,15 @@ public class MutationList<E> extends ArrayLinkList<E> {
             if (numInserts > 0) {
                 changeLog = new ChangeNode[numInserts];
                 this.flattenTree(mutationTreeRoot, changeLog, 0, 0);
-                /**
-                
-                TODO: Write an iterator to print out what the tree looks like.
-                
-                */
-                
-                
-                System.out.println("Change log flattened: " + Arrays.toString(changeLog));
                 mutationTreeRoot = null; // Clear the mutation tree.
+
+                System.out.print("Change log value list with length: " + changeLog.length + ": [");
+                for (int i = 0; i < changeLog.length; i++) {
+                    ChangeNode changeNode = changeLog[i];
+                    System.out.print(changeNode.value + " ");
+                }
+                System.out.println("]");
             }
-            
-            System.out.print("Change log value list: [");
-            for(int i=0; i < changeLog.length; i++) {
-                ChangeNode changeNode = changeLog[i];
-                System.out.print(changeNode.value);
-            }
-            System.out.println("]");
 
             int changeLogCounter = 0; // Keep track of where in the changelog we are at.
             ArrayLink tmpLink = super.firstLink; // The arraylink we are traversing to do compaction.
@@ -197,13 +198,14 @@ public class MutationList<E> extends ArrayLinkList<E> {
                     changeLogCounter++;
                 }
 
-                System.out.println("Copying remaining arraylist elements.");
                 // Now copy remaining elements in array link list after the last change log index that appears in the given array link.
-                int copyLength = tmpLink.values.length - arrayLinkOffset;
-                if (copyLength > arrayLinkListRemainder) {
-                    System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, copyLength);
-                    arrayLinkListRemainder -= copyLength;
-                    compactArrayOffset += copyLength;
+                int arrayLinkRemainder = tmpLink.values.length - arrayLinkOffset; // Number of elements remaining in array link.
+                System.out.println("Copying remaining arraylist elements: " + arrayLinkRemainder);
+
+                if (arrayLinkRemainder < arrayLinkListRemainder) {
+                    System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, arrayLinkRemainder);
+                    arrayLinkListRemainder -= arrayLinkRemainder;
+                    compactArrayOffset += arrayLinkRemainder;
                 } else {
                     System.out.println("Array linked list remainder: " + arrayLinkListRemainder);
                     System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, arrayLinkListRemainder);
@@ -219,7 +221,7 @@ public class MutationList<E> extends ArrayLinkList<E> {
             // Apply any change log values occurring after the array link list has been fully copied over.
             // Any remove mutation encountered is an internal error.
             while (changeLog != null && changeLogCounter < changeLog.length) {
-                System.out.println("Change log counter: " + changeLogCounter + " object: " + changeLog[changeLogCounter]);
+//                System.out.println("Change log counter: " + changeLogCounter + " object: " + changeLog[changeLogCounter]);
                 compactArray[compactArrayOffset] = changeLog[changeLogCounter].value;
                 compactArrayOffset++;
                 changeLogCounter++;
@@ -229,7 +231,7 @@ public class MutationList<E> extends ArrayLinkList<E> {
             super.firstLink = tmpLink;
             super.writeLink = tmpLink;
             super.writeLinkOffset = super.totalSize;
-            
+
             numInserts = 0; // Don't forget to reset the number of mutations.
         }
     }
@@ -237,7 +239,7 @@ public class MutationList<E> extends ArrayLinkList<E> {
     //TODO: Change the writeArray type to a changelog node.
     private int flattenTree(MutationNode rootNode, ChangeNode[] writeArray, int offset, int index) {
 //        System.out.println("Flatten tree called with write offset: " + offset);
-        
+
         if (rootNode.leftChild != null) {
             offset = this.flattenTree(rootNode.leftChild, writeArray, offset, index);
         }
@@ -251,7 +253,7 @@ public class MutationList<E> extends ArrayLinkList<E> {
         if (rootNode.rightChild != null) {
             offset = this.flattenTree(rootNode.rightChild, writeArray, offset, index + rootNode.delta);
         }
-        
+
         return offset;
     }
 

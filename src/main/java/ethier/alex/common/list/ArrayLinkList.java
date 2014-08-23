@@ -132,12 +132,12 @@ public class ArrayLinkList<E> implements List<E> {
             tmpLink = tmpLink.next;
         }
 
-        System.out.println("");
-        System.out.println("Total Size: " + totalSize + " Index: " + index + " count " + count);
+//        System.out.println("");
+//        System.out.println("Total Size: " + totalSize + " Index: " + index + " count " + count);
 //        this.print();
 //        
         E oldValue = (E) tmpLink.values[count];
-        System.out.println("Removing value: " + oldValue);
+//        System.out.println("Removing value: " + oldValue);
 
         Object[] newValues = new Object[tmpLink.values.length - 1];
         System.arraycopy(tmpLink.values, 0, newValues, 0, count);

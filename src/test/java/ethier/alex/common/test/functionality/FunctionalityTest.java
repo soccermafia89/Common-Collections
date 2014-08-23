@@ -41,21 +41,21 @@ public class FunctionalityTest {
         int count = 0;
         while (it.hasNext()) {
             Object value = it.next();
-            
-            if(value == null) {
+
+            if (value == null) {
                 System.out.println("Content: " + Arrays.toString(list.toArray()));
                 System.out.println("Size: " + list.size());
             }
-            
-            if(values == null) {
+
+            if (values == null) {
                 System.out.println("Values is null");
             }
-            
-            if(values[count] == null) {
+
+            if (values[count] == null) {
                 System.out.println("Values count is null at: " + count);
             }
-            
-            if(!value.equals(values[count])) {
+
+            if (!value.equals(values[count])) {
                 System.out.println("Control value=" + values[count] + " list value=" + value);
             }
 
@@ -67,42 +67,72 @@ public class FunctionalityTest {
     }
 
     private void checkRandomAccess(Object[] values, List list) {
-        for(int i = 0; i < values.length; i++) {
+        for (int i = 0; i < values.length; i++) {
             int randAccessPoint = (int) (Math.random() * values.length);
             Assert.assertTrue(list.get(randAccessPoint).equals(values[randAccessPoint]));
         }
     }
-    
+
     // Returns the control list that should be identical.
     private List<Object> checkInsert(Object[] values, List list) {
-        
+
         List controlList = new ArrayList();
-        
-//        for(int i=0; i<values.length; i++) {
-//            list.add(i, values[i]);
-//            controlList.add(i, values[i]);
-//        }
-        
-        for(int i=0; i<values.length; i++) {
+
+        for (int i = 0; i < values.length; i++) {
+            list.add(i, values[i]);
+            controlList.add(i, values[i]);
+        }
+
+        for (int i = 0; i < values.length; i++) {
             int randInsertPoint = (int) (Math.random() * controlList.size());
             list.add(randInsertPoint, values[i]);
             controlList.add(randInsertPoint, values[i]);
         }
-        
+
         return controlList;
     }
-    
+
+    private List<Object> checkMutation(Object[] values, List list) {
+
+        List controlList = new ArrayList();
+        int valueOffset = 0;
+
+        while (valueOffset < values.length) {
+            int mutationType = (int) (3 * Math.random());
+            if (mutationType == 0) { // Do a normal add
+                list.add(values[valueOffset]);
+                controlList.add(values[valueOffset]);
+                valueOffset++;
+            } else if (mutationType == 1) { // Do an insert
+                
+                int randomInsertPoint = (int) (controlList.size() * Math.random());
+                try {
+                    list.add(randomInsertPoint, values[valueOffset]);
+                    controlList.add(randomInsertPoint, values[valueOffset]);
+                    valueOffset++;
+                } catch (RuntimeException e) {
+                    logger.error("Exception occured trying to insert element at: " + randomInsertPoint + " with list size: " + controlList.size());
+                    throw(e);
+                }
+            } else if (mutationType == 2 && controlList.size() > 1) { // Do a remove (only if there are at least 2 elements.
+                // TODO
+            }
+        }
+
+        return controlList;
+    }
+
     private List<Object> checkRemoval(List list, int num) {
         List controlList = new ArrayList();
         controlList.addAll(list);
-        
-        for(int i=0; i<num; i++) {
+
+        for (int i = 0; i < num; i++) {
             int randRemovePoint = (int) (Math.random() * controlList.size());
             controlList.remove(randRemovePoint);
 //            System.out.println("Control removed: " + controlRemoved);
             list.remove(randRemovePoint);
         }
-        
+
         return controlList;
     }
 
@@ -115,13 +145,13 @@ public class FunctionalityTest {
             Assert.assertTrue(list.indexOf(randomObject) == randAccessPoint);
         }
     }
-    
+
     private void checkToArray(Object[] values, List list) {
         Object[] listArray = list.toArray();
-        for(int i=0; i<listArray.length; i++) {
+        for (int i = 0; i < listArray.length; i++) {
             Assert.assertTrue(listArray[i].equals(values[i]));
         }
-        
+
         Assert.assertTrue(values.length == listArray.length);
     }
 
@@ -142,16 +172,15 @@ public class FunctionalityTest {
         listClasses.add(MutationList.class);
 //        listClasses.add(ControlArrayList.class);
 
-//        int largeSize = 10000;
-        int largeSize = 10;
+        int largeSize = 1000;
         DataGenerator dataGenerator = new DataGenerator();
 //        Object[] values = dataGenerator.getDoubles(largeSize);
         Object[] largeValues = dataGenerator.getIntegers(largeSize, 10);
 
-        int smallSize = 2;
+        int smallSize = 10;
         Object[] smallValues = dataGenerator.getDoubles(smallSize);
-        
-        int mediumSize = 10;
+
+        int mediumSize = 30;
         Object[] mediumValues = dataGenerator.getIntegers(mediumSize, 10);
 
         Set<Object> uniqueSet = new HashSet<Object>();
@@ -184,21 +213,26 @@ public class FunctionalityTest {
                 this.checkIteration(smallValues, smallTestList);
                 this.checkRandomAccess(smallValues, smallTestList);
                 this.checkToArray(smallValues, smallTestList);
-                
+
                 logger.info("Testing insertion.");
                 List testInsertList = (List) listClass.newInstance();
                 List controlList = this.checkInsert(mediumValues, testInsertList);
                 logger.info("Iterating post insertion.");
                 this.checkIteration(controlList.toArray(), testInsertList);
-                
+
                 logger.info("Testing removal.");
                 List removeList = (List) listClass.newInstance();
                 this.checkAddIndividually(mediumValues, removeList);
-                controlList = this.checkRemoval(removeList, (mediumSize/2));
+                controlList = this.checkRemoval(removeList, (mediumSize / 2));
                 this.checkIteration(controlList.toArray(), removeList);
+
+                logger.info("Testing random mutation.");
+                List mutationList = (List) listClass.newInstance();
+                controlList = this.checkMutation(mediumValues, mutationList);
+                this.checkIteration(controlList.toArray(), mutationList);
             } catch (Exception e) {
                 logger.error("List class: {} failed test.", listClass.getCanonicalName());
-                throw(e);
+                throw (e);
             }
         }
     }
