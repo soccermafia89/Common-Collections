@@ -44,6 +44,7 @@ public class FunctionalityTest {
             Object value = it.next();
 
             if (value == null) {
+                System.out.println("Null value found during iteration: ");
                 System.out.println("Content: " + Arrays.toString(list.toArray()));
                 System.out.println("Size: " + list.size());
             }
@@ -57,7 +58,7 @@ public class FunctionalityTest {
             }
 
             if (!value.equals(values[count])) {
-                System.out.println("Control value=" + values[count] + " list value=" + value);
+                System.out.println("Control value=" + values[count] + " list value=" + value + " at index: " + count);
             }
 
             Assert.assertTrue(value.equals(values[count]));
@@ -76,8 +77,8 @@ public class FunctionalityTest {
 
     // Returns the control list that should be identical.
     private List<Object> checkInsert(Object[] values, List list) {
-        
-//        Random generator = new Random(1L);
+
+        Random generator = new Random(1L);
 
         List controlList = new ArrayList();
 
@@ -87,8 +88,8 @@ public class FunctionalityTest {
         }
 
         for (int i = 0; i < values.length; i++) {
-//            int randInsertPoint = generator.nextInt(controlList.size());
-            int randInsertPoint = (int) (Math.random()*controlList.size());
+            int randInsertPoint = generator.nextInt(controlList.size());
+//            int randInsertPoint = (int) (Math.random() * controlList.size());
             list.add(randInsertPoint, values[i]);
             controlList.add(randInsertPoint, values[i]);
         }
@@ -97,7 +98,7 @@ public class FunctionalityTest {
     }
 
     private List<Object> checkMutation(Object[] values, List list) {
-        
+
         Random generator = new Random(1L);
 
         List controlList = new ArrayList();
@@ -107,20 +108,36 @@ public class FunctionalityTest {
             int mutationType = generator.nextInt(3);
 //            int mutationType = (int) (3 * Math.random());
             if (mutationType == 0) { // Do a normal add
+                System.out.println("");
+                System.out.println("Normal add called with value: " + values[valueOffset]);
                 list.add(values[valueOffset]);
                 controlList.add(values[valueOffset]);
                 valueOffset++;
+
+                if (list instanceof MutationList) {
+                    ArrayLinkList arrayLinkList = (ArrayLinkList) list;
+                    arrayLinkList.print();
+                }
             } else if (mutationType == 1) { // Do an insert
-                
+
 //                int randomInsertPoint = (int) (controlList.size() * Math.random());
                 int randomInsertPoint = generator.nextInt(controlList.size());
                 try {
+                    System.out.println("");
+                    System.out.println("Insert called at index: " + randomInsertPoint + " with value: " + values[valueOffset]);
+
                     list.add(randomInsertPoint, values[valueOffset]);
                     controlList.add(randomInsertPoint, values[valueOffset]);
                     valueOffset++;
+
+                    if (list instanceof MutationList) {
+                        ArrayLinkList arrayLinkList = (ArrayLinkList) list;
+                        arrayLinkList.print();
+                    }
+
                 } catch (RuntimeException e) {
                     logger.error("Exception occured trying to insert element at: " + randomInsertPoint + " with list size: " + controlList.size());
-                    throw(e);
+                    throw (e);
                 }
             } else if (mutationType == 2 && controlList.size() > 1) { // Do a remove (only if there are at least 2 elements.
                 // TODO

@@ -34,6 +34,7 @@ public class ArrayLinkList<E> implements List<E> {
     @Override
     public boolean add(E object) {
 
+        // TODO: consider switching less than with !=
         if (writeLinkOffset < writeLink.values.length) {
             writeLink.values[writeLinkOffset] = object;
             writeLinkOffset++;
@@ -62,54 +63,49 @@ public class ArrayLinkList<E> implements List<E> {
     @Override
     public void add(int index, E element) {
 
-//        System.out.println("");
-//        System.out.println("Inserting element " + element + " at " + index);
-//        this.print();
-
         if (index > totalSize || index < 0) {
             throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + totalSize);
         }
 
-        int count = index;
-//        int arrayLinkListOffset = 0;
+        int arrayLinkListOffset = 0; // Keeps track of how many elements we have traversed via link list.
         ArrayLink tmpLink = firstLink;
-        while (tmpLink != null && count > tmpLink.values.length) {
-            count = count - tmpLink.values.length;
+        while ((arrayLinkListOffset += tmpLink.values.length) < index) {
             tmpLink = tmpLink.next;
         }
+        
+        if (tmpLink.next == null) {// We are at the last link, i.e the writeLink
+            if (totalSize == arrayLinkListOffset) { // The last link happens to full so.
+                // TODO: Since this code is the same as below, consider creating a single method to use.
+                int shiftValues = arrayLinkListOffset - index; // Number of elements we have to shift.
+                int arrayLinkOffset = writeLink.values.length - shiftValues; // Where to begin shifting elements.
 
-        int shiftElements = tmpLink.values.length - count;
+                Object[] newValues = new Object[writeLink.values.length + 1];
 
-        if (tmpLink.next == null) {// We are at the last link.
-            int remainingValues = count + totalSize - index; // The size of remaining elements in last link.
-            shiftElements = remainingValues - count;
-            if (remainingValues != writeLink.values.length) {// We do not need to resize the array.
-                System.arraycopy(tmpLink.values, count, tmpLink.values, count + 1, shiftElements);
-                tmpLink.values[count] = element;
-            } else { // The last link is full so shift an element over.
-                int newSize = (3 * writeLink.values.length) / 2 + 1;
-                ArrayLink newLink = new ArrayLink(newSize);
-
-                if (index == totalSize) { // If we happen to be inserting in the end.
-                    newLink.values[0] = element;
-                } else {
-//                    System.out.println("Last value: " + writeLink.values[remainingValues - 1]);
-                    newLink.values[0] = writeLink.values[remainingValues - 1];
-                    System.arraycopy(writeLink.values, count, writeLink.values, count + 1, shiftElements - 1);
-                    tmpLink.values[count] = element;
-                }
-
-                writeLink.next = newLink;
-                writeLink = writeLink.next;
-                writeLinkOffset = 1;
+                System.arraycopy(writeLink.values, 0, newValues, 0, arrayLinkOffset);
+                System.arraycopy(writeLink.values, arrayLinkOffset, newValues, arrayLinkOffset + 1, shiftValues);
+                writeLink.values = newValues;
+                writeLink.values[arrayLinkOffset] = element;
+            } else { // Creating a new array is not necessary, only shift over required elements.
+                int arrayLinkIndex = (index - arrayLinkListOffset) + writeLink.values.length; // Where to begin shifting elements.                
+                int shiftValues = writeLinkOffset - arrayLinkIndex; // See calculations above.
+                                
+//                if(shiftValues > 0) {
+                    System.arraycopy(writeLink.values, arrayLinkIndex, writeLink.values, arrayLinkIndex + 1, shiftValues);
+//                }
+                writeLink.values[arrayLinkIndex] = element;
             }
+            
+            writeLinkOffset++; // Remember to update the write link offset.
         } else {
+            int shiftValues = arrayLinkListOffset - index; // Number of elements we have to shift.
+            int arrayLinkOffset = tmpLink.values.length - shiftValues; // Where to begin shifting elements.
+
             Object[] newValues = new Object[tmpLink.values.length + 1];
 
-            System.arraycopy(tmpLink.values, 0, newValues, 0, count);
-            System.arraycopy(tmpLink.values, count, newValues, count + 1, shiftElements);
+            System.arraycopy(tmpLink.values, 0, newValues, 0, arrayLinkOffset);
+            System.arraycopy(tmpLink.values, arrayLinkOffset, newValues, arrayLinkOffset + 1, shiftValues);
             tmpLink.values = newValues;
-            tmpLink.values[count] = element;
+            tmpLink.values[arrayLinkOffset] = element;
         }
 
         totalSize++;
@@ -120,6 +116,13 @@ public class ArrayLinkList<E> implements List<E> {
 
     @Override
     public E remove(int index) {
+        
+        /**
+        
+        TODO ERROR: if at last link, we need to modify the write link offset value to support add(object e);
+        
+        */
+        
         if (index >= totalSize) {
             throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + totalSize);
         }
@@ -133,12 +136,7 @@ public class ArrayLinkList<E> implements List<E> {
             tmpLink = tmpLink.next;
         }
 
-//        System.out.println("");
-//        System.out.println("Total Size: " + totalSize + " Index: " + index + " count " + count);
-//        this.print();
-//        
         E oldValue = (E) tmpLink.values[count];
-//        System.out.println("Removing value: " + oldValue);
 
         Object[] newValues = new Object[tmpLink.values.length - 1];
         System.arraycopy(tmpLink.values, 0, newValues, 0, count);
@@ -151,7 +149,7 @@ public class ArrayLinkList<E> implements List<E> {
     }
 
     // Convenience method for testing purposes only.
-    private void print() {
+    public void print() {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("Content: ");
         ArrayLink tmpLink = firstLink;
