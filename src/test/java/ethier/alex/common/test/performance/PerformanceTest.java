@@ -53,7 +53,7 @@ public class PerformanceTest {
         for (int round = 0; round < 2; round++) {
 
             int size = 20000000;
-            DataGenerator dataGenerator = new DataGenerator();
+            RandomDataGenerator dataGenerator = new RandomDataGenerator();
             Double[] values = dataGenerator.getDoubles(size);
             Stopwatch methodTimer = Stopwatch.createUnstarted();
             Stopwatch collectionTimer = Stopwatch.createUnstarted();
@@ -146,7 +146,7 @@ public class PerformanceTest {
         for (int round = 0; round < 2; round++) {
 
             int size = 2000000;
-            DataGenerator dataGenerator = new DataGenerator();
+            RandomDataGenerator dataGenerator = new RandomDataGenerator();
             Double[] values = dataGenerator.getDoubles(size);
             Stopwatch methodTimer = Stopwatch.createUnstarted();
             Stopwatch collectionTimer = Stopwatch.createUnstarted();
@@ -252,7 +252,7 @@ public class PerformanceTest {
             int size = 200;
             int numCollections = 100000;
 
-            DataGenerator dataGenerator = new DataGenerator();
+            RandomDataGenerator dataGenerator = new RandomDataGenerator();
             Double[][] data = new Double[numCollections][size];
             for (int i = 0; i < numCollections; i++) {
 
@@ -345,7 +345,7 @@ public class PerformanceTest {
         for (int round = 0; round < 2; round++) {
 
             int size = 1000000;
-            DataGenerator dataGenerator = new DataGenerator();
+            RandomDataGenerator dataGenerator = new RandomDataGenerator();
             Double[] values = dataGenerator.getDoubles(size);
             Integer[] randomAccessPoints = dataGenerator.getIntegers(10 * size, size);
             Stopwatch methodTimer = Stopwatch.createUnstarted();
@@ -456,7 +456,7 @@ public class PerformanceTest {
             int size = 20000;
             int objectSize = 20000;
 
-            DataGenerator dataGenerator = new DataGenerator();
+            RandomDataGenerator dataGenerator = new RandomDataGenerator();
             BigObject[] values = dataGenerator.getBigObjects(size, objectSize);
 //            List<BigObject> shuffledValues = new ControlArrayList(size);
             List<BigObject> shuffledValues = new ArrayList(size);
@@ -550,7 +550,7 @@ public class PerformanceTest {
             int size = 200000;
             int insertionSize = 20000;
 
-            DataGenerator dataGenerator = new DataGenerator();
+            RandomDataGenerator dataGenerator = new RandomDataGenerator();
             Integer[] values = dataGenerator.getIntegers(size, 20);
             Integer[] insertionValues = dataGenerator.getIntegers(insertionSize, 9);
             Integer[] insertionPoints = dataGenerator.getIntegers(insertionSize, size);

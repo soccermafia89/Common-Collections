@@ -71,6 +71,7 @@ public class ArrayLinkList<E> implements List<E> {
         }
 
         int count = index;
+//        int arrayLinkListOffset = 0;
         ArrayLink tmpLink = firstLink;
         while (tmpLink != null && count > tmpLink.values.length) {
             count = count - tmpLink.values.length;
