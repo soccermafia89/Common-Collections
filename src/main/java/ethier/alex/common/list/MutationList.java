@@ -160,12 +160,12 @@ public class MutationList<E> extends ArrayLinkList<E> {
                 // First merge the underlying array link list values up to the current change log index.
                 int numArrayLinkCopies = changeLog[changeLogCounter].index - compactArrayOffset; // Number of remaining array link copies to make.
 
+                int remainingValues; // Number of remaining values that were not copied in the current link.
                 // This could span multiple links.
-                int remainingValues = tmpLink.values.length - arrayLinkOffset;
-                while (numArrayLinkCopies > tmpLink.values.length - arrayLinkOffset) {
-                    System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, tmpLink.values.length - arrayLinkOffset);
-                    compactArrayOffset += tmpLink.values.length - arrayLinkOffset;
-                    numArrayLinkCopies -= tmpLink.values.length - arrayLinkOffset;
+                while (numArrayLinkCopies > (remainingValues = tmpLink.values.length - arrayLinkOffset)) {
+                    System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, remainingValues);
+                    compactArrayOffset += remainingValues;
+                    numArrayLinkCopies -= remainingValues;
                     
                     arrayLinkOffset = 0;
                     tmpLink = tmpLink.next;
@@ -192,16 +192,16 @@ public class MutationList<E> extends ArrayLinkList<E> {
 //            System.out.println("Finished applying all change log events, compact remaining array link list values.");
 //            System.out.println("Current compact array snapshot: " + Arrays.toString(compactArray));
 
-            // Now apply the rest of the array link values whose index is beyong any change events.
+            // Now apply the rest of the array link values whose index is beyond any change events.
             while (tmpLink != null) {
-                
-                // TODO: build this into while loop check?
-                if (compactArrayOffset + (tmpLink.values.length - arrayLinkOffset) > compactArray.length) {
+                int remainingValues = tmpLink.values.length - arrayLinkOffset; // Number of remaining values that were not copied in the current link.
+                int nextCompactArrayOffset = compactArrayOffset + remainingValues; // This while loop is set up funny so this is required, fix later.
+                if (nextCompactArrayOffset > compactArray.length) {
                     System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, compactArray.length - compactArrayOffset);
                     break;
                 } else {
-                    System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, tmpLink.values.length - arrayLinkOffset);
-                    compactArrayOffset += (tmpLink.values.length - arrayLinkOffset);
+                    System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, remainingValues);
+                    compactArrayOffset = nextCompactArrayOffset;
                     arrayLinkOffset = 0;
                 }
                 
