@@ -4,7 +4,7 @@ import ethier.alex.common.list.ArrayLinkList;
 import ethier.alex.common.list.CompactionList;
 import ethier.alex.common.list.MutationList;
 import ethier.alex.common.test.performance.DataGenerator;
-import ethier.alex.common.test.performance.SeededGenerator;
+import ethier.alex.common.test.performance.RandomDataGenerator;
 import java.util.*;
 import junit.framework.Assert;
 import org.apache.logging.log4j.LogManager;
@@ -79,7 +79,7 @@ public class FunctionalityTest {
     // Returns the control list that should be identical.
     private List<Object> checkInsert(Object[] values, List list) {
 
-        Random generator = new Random(1L);
+//        Random generator = new Random(1L);
 
         List controlList = new ArrayList();
 
@@ -89,8 +89,8 @@ public class FunctionalityTest {
         }
 
         for (int i = 0; i < values.length; i++) {
-            int randInsertPoint = generator.nextInt(controlList.size());
-//            int randInsertPoint = (int) (Math.random() * controlList.size());
+//            int randInsertPoint = generator.nextInt(controlList.size());
+            int randInsertPoint = (int) (Math.random() * controlList.size());
             list.add(randInsertPoint, values[i]);
             controlList.add(randInsertPoint, values[i]);
         }
@@ -100,42 +100,26 @@ public class FunctionalityTest {
 
     private List<Object> checkMutation(Object[] values, List list) {
 
-        Random generator = new Random(1L);
+//        Random generator = new Random(1L);
 
         List controlList = new ArrayList();
         int valueOffset = 0;
 
         while (valueOffset < values.length) {
-            int mutationType = generator.nextInt(3);
-//            int mutationType = (int) (3 * Math.random());
+//            int mutationType = generator.nextInt(3);
+            int mutationType = (int) (3 * Math.random());
             if (mutationType == 0) { // Do a normal add
-                System.out.println("");
-                System.out.println("Normal add called with value: " + values[valueOffset]);
                 list.add(values[valueOffset]);
                 controlList.add(values[valueOffset]);
                 valueOffset++;
-
-                if (list instanceof MutationList) {
-                    ArrayLinkList arrayLinkList = (ArrayLinkList) list;
-                    arrayLinkList.print();
-                }
             } else if (mutationType == 1) { // Do an insert
 
-//                int randomInsertPoint = (int) (controlList.size() * Math.random());
-                int randomInsertPoint = generator.nextInt(controlList.size());
+                int randomInsertPoint = (int) (controlList.size() * Math.random());
+//                int randomInsertPoint = generator.nextInt(controlList.size());
                 try {
-                    System.out.println("");
-                    System.out.println("Insert called at index: " + randomInsertPoint + " with value: " + values[valueOffset]);
-
                     list.add(randomInsertPoint, values[valueOffset]);
                     controlList.add(randomInsertPoint, values[valueOffset]);
                     valueOffset++;
-
-                    if (list instanceof MutationList) {
-                        ArrayLinkList arrayLinkList = (ArrayLinkList) list;
-                        arrayLinkList.print();
-                    }
-
                 } catch (RuntimeException e) {
                     logger.error("Exception occured trying to insert element at: " + randomInsertPoint + " with list size: " + controlList.size());
                     throw (e);
@@ -198,9 +182,9 @@ public class FunctionalityTest {
         listClasses.add(MutationList.class);
 //        listClasses.add(ControlArrayList.class);
 
-        int largeSize = 1000;
-//        DataGenerator dataGenerator = new SeededGenerator(3124L);
-        DataGenerator dataGenerator = new SeededGenerator(0L);
+        int largeSize = 10000;
+        DataGenerator dataGenerator = new RandomDataGenerator();
+//        DataGenerator dataGenerator = new SeededGenerator(0L);
 
 //        Object[] values = dataGenerator.getDoubles(largeSize);
         Object[] largeValues = dataGenerator.getIntegers(largeSize, 10);
@@ -208,7 +192,7 @@ public class FunctionalityTest {
         int smallSize = 10;
         Object[] smallValues = dataGenerator.getDoubles(smallSize);
 
-        int mediumSize = 200;
+        int mediumSize = 1000;
         Object[] mediumValues = dataGenerator.getIntegers(mediumSize, 10);
 
         Set<Object> uniqueSet = new HashSet<Object>();
@@ -218,6 +202,7 @@ public class FunctionalityTest {
         for (Class listClass : listClasses) {
 
             try {
+                System.out.println("");
                 logger.info("Testing Functionality for: {}", listClass.getCanonicalName());
 
                 List testList = (List) listClass.newInstance();
