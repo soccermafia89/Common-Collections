@@ -10,7 +10,8 @@ import java.util.*;
  */
 public class ArrayLinkList<E> implements List<E> {
 
-    private static final int initSize = 16;
+//    private static final int initSize = 16;
+    private static final int initSize = 2;
     protected ArrayLink writeLink;
     protected int writeLinkOffset; // Where to write new values in the current writeLink's arraylist.
     protected int totalSize;

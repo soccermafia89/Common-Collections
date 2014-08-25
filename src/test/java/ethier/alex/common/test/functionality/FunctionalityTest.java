@@ -47,6 +47,7 @@ public class FunctionalityTest {
                 System.out.println("Null value found during iteration: ");
                 System.out.println("Content: " + Arrays.toString(list.toArray()));
                 System.out.println("Size: " + list.size());
+                System.out.println("Index: " + count);
             }
 
             if (values == null) {
@@ -198,14 +199,16 @@ public class FunctionalityTest {
 //        listClasses.add(ControlArrayList.class);
 
         int largeSize = 1000;
+//        DataGenerator dataGenerator = new SeededGenerator(3124L);
         DataGenerator dataGenerator = new SeededGenerator(0L);
+
 //        Object[] values = dataGenerator.getDoubles(largeSize);
         Object[] largeValues = dataGenerator.getIntegers(largeSize, 10);
 
         int smallSize = 10;
         Object[] smallValues = dataGenerator.getDoubles(smallSize);
 
-        int mediumSize = 30;
+        int mediumSize = 200;
         Object[] mediumValues = dataGenerator.getIntegers(mediumSize, 10);
 
         Set<Object> uniqueSet = new HashSet<Object>();
