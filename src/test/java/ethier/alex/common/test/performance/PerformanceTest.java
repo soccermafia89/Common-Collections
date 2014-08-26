@@ -21,12 +21,6 @@ import org.junit.Test;
  */
 public class PerformanceTest {
 
-    // TEST CASE TODOS:
-    // Large object test
-    // Fail fast under concurrent modification.
-    // addAll (both cases)
-    // toArray
-    // indexOf
     private static Logger logger = LogManager.getLogger(PerformanceTest.class);
 
     @BeforeClass

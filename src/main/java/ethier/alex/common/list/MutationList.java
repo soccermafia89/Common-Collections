@@ -82,7 +82,7 @@ public class MutationList<E> extends ArrayLinkList<E> {
     // If the child's delta is larger, add to the right and subtract the root node delta from the child.
     // If the child's delta is smaller or equal, increment the root node delta by one.
     // To calculate a child's index value from the deltas:
-    // If you move to a right child, append the delta to the current delta.
+    // If you move to a right child, append the current node's delta to the current delta.
     // If you move to a left child, do not append any delta.
     // When returning the node's index value, append the node's delta.
     private void addToTree(int delta, E element, MutationNode rootNode) {
