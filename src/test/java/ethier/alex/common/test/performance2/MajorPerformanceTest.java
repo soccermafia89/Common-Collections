@@ -46,7 +46,7 @@ public class MajorPerformanceTest {
         testListClasses.add(MutationList.class);
         
         int rounds = 5;
-        int sets = 500;
+        int sets = 100;
         
         ResultCompiler resultCompiler = new ResultCompiler(testListClasses, rounds, sets);
         
@@ -56,7 +56,7 @@ public class MajorPerformanceTest {
                                      int numTraversals, int numRandomAccesses)
         */
         
-        Map<Class, Double> rankedResults = resultCompiler.getRank(NumOperations.TINY, 0, 0, 1, 0);
+        Map<Class, Double> rankedResults = resultCompiler.getRank(NumOperations.MEDIUM, 0.15, 0, 5, NumOperations.SMALL.getNumOperations());
         
         System.out.println("");
         System.out.println("");

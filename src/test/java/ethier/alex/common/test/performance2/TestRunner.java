@@ -83,13 +83,13 @@ public class TestRunner {
             double picker = random.nextDouble();
             
             if(picker < insertRatio) {
-                int insertPoint = random.nextInt(listClazz.size());
+                int insertPoint = random.nextInt(listClazz.size() +1);
                 
                 listClazz.add(insertPoint, random.nextDouble());
                 count++;
             }
             
-            if(picker < mutateRatio) {
+            if(picker < mutateRatio && listClazz.size() > 0) {
                 int secondPicker = random.nextInt(2);
                 if(listClazz.isEmpty()) {
                     secondPicker = 0;
