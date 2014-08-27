@@ -12,7 +12,9 @@ import java.util.NoSuchElementException;
 
  An implementation of List. Should have much better write performance than an ArrayList while retaining read performance.
 
-TODO: override insert and remove if they are running slower (match new implementation to arraylist after calling a compaction).
+TODO: Override insert and remove if they are running slower (match new implementation to arraylist after calling a compaction).
+TODO: Do not compact on traversal (iterator called).
+TODO: Do not append extra space on certain compactions.
 
  @author Alex Ethier
  */
