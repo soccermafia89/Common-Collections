@@ -5,6 +5,7 @@
 package ethier.alex.common.test.performance2;
 
 import com.google.common.base.Stopwatch;
+import ethier.alex.world.metrics.MetricFactory;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -17,18 +18,18 @@ import org.apache.logging.log4j.Logger;
 public class TestRunner {
     
     private static Logger logger = LogManager.getLogger(TestRunner.class);
-    
+        
     private long randomSeed;
     private List<Class> listClasses;
     
-    private NumOperations dataSize;
+    private int numOperations;
     private double insertRatio;
     private double mutateRatio;
     private int numTraversals;
     private int numRandomAccesses;
             
     
-    public TestRunner(Collection<Class> testListClasses, NumOperations myDataSize, 
+    public TestRunner(Collection<Class> testListClasses, int numOperations, 
                                             double myInsertRatio, double myMutateRatio,
                                             int myNumTraversals, int myNumRandomAccesses) {
         
@@ -36,7 +37,7 @@ public class TestRunner {
         listClasses.addAll(testListClasses);
         Collections.shuffle(listClasses);
         
-        dataSize = myDataSize;
+        this.numOperations = numOperations;
         insertRatio = myInsertRatio;
         mutateRatio = myMutateRatio;
         numTraversals = myNumTraversals;
@@ -49,43 +50,45 @@ public class TestRunner {
         
         Map<Class, Long> testResults = new HashMap<Class, Long>();
         randomSeed = (long) (Math.random()*Long.MAX_VALUE);
+        Collections.shuffle(listClasses);
         
         for(Class clazz : listClasses) {
-            Random random = new Random(randomSeed);
+            BufferedRandom random = new BufferedRandom(randomSeed, numOperations, numOperations);
                        
             Runtime.getRuntime().gc();
+            
             Stopwatch stopwatch = Stopwatch.createStarted();
             this.runPerformanceTest(random, clazz);
+            Runtime.getRuntime().gc();            
+            stopwatch.stop();                       
+//            long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+            long elapsedNanos = stopwatch.elapsed(TimeUnit.NANOSECONDS);
+            MetricFactory.INSTANCE.getTimer().updateTimer(clazz.getCanonicalName() + StaticTestVariables.TOTAL_TIMER_BASE_KEY, elapsedNanos, TimeUnit.NANOSECONDS);
+            logger.trace("List: {} took {} nanos.", clazz.getCanonicalName(), elapsedNanos);
             
-            Runtime.getRuntime().gc();
-
-            
-            stopwatch.stop();
-            long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
-            logger.info("List: {} took {} millis.", clazz.getCanonicalName(), elapsedMillis);
-            
-            testResults.put(clazz, elapsedMillis); // Hopefully this growing in memory object won't unfairly affect tests.
+            testResults.put(clazz, elapsedNanos); // Hopefully this growing in memory object won't unfairly affect tests.
         }
         
         return testResults;
     }
     
-    private void runPerformanceTest(Random random, Class clazz) throws InstantiationException, IllegalAccessException {
-        
-        logger.info("Performance test underway for class {} with {} operations.", clazz.getCanonicalName(), dataSize.getNumOperations());
+    private void runPerformanceTest(BufferedRandom random, Class clazz) throws InstantiationException, IllegalAccessException {
+//        MetricFactory.INSTANCE.getTimer().continueTimer(StaticTestVariables.EXTRA_TIMER);
+//        logger.trace("Performance test underway for class {} with {} operations.", clazz.getCanonicalName(), numOperations);
         double total = 0.0D;
         
         List listClazz = (List) clazz.newInstance();
         
         int count = 0;
-        while(count < dataSize.getNumOperations()) {
+        while(count < numOperations) {
 //            logger.info("Count: {}", count);
             double picker = random.nextDouble();
             
             if(picker < insertRatio) {
                 int insertPoint = random.nextInt(listClazz.size() +1);
-                
+//                MetricFactory.INSTANCE.getTimer().stopTimer(StaticTestVariables.EXTRA_TIMER);
                 listClazz.add(insertPoint, random.nextDouble());
+//                MetricFactory.INSTANCE.getTimer().continueTimer(StaticTestVariables.EXTRA_TIMER);
                 count++;
             }
             
@@ -111,22 +114,25 @@ public class TestRunner {
             count++;
         }
         
-        logger.trace("Finished writing to list.");
-        
+//        logger.trace("Finished writing to list.");
+//        MetricFactory.INSTANCE.getTimer().stopTimer(StaticTestVariables.EXTRA_TIMER);
+
         for(int i=0; i < numTraversals; i++) {
+
             Iterator it = listClazz.iterator();
             while(it.hasNext()) {
                 total += (Double) it.next();
             }
         }
+//        MetricFactory.INSTANCE.getTimer().continueTimer(StaticTestVariables.EXTRA_TIMER);
+
         
         int listClassSize = listClazz.size();
         for(int i=0; i < numRandomAccesses; i++) {
             total += (Double) listClazz.get(random.nextInt(listClassSize));
         }
         
-        logger.trace("Finished reading list.");
-        
         logger.trace(total);
+//        MetricFactory.INSTANCE.getTimer().stopTimer(StaticTestVariables.EXTRA_TIMER);
     }
 }

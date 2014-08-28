@@ -32,11 +32,12 @@ public class CompactionList<E> extends ArrayLinkList<E> {
         return (E) super.firstLink.values[index];
     }
 
-    @Override
-    public Iterator<E> iterator() {
-        compact();
-        return new CompactionIterator<E>();
-    }
+//    @Override
+//    public Iterator<E> iterator() {
+//        
+//        compact();
+//        return new CompactionIterator<E>();
+//    }
 
     // Compacts the underlying linklist into a single link with all elements within a single array.
     // All read methods should call compact().

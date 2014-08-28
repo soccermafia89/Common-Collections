@@ -3,10 +3,12 @@ package ethier.alex.common.test.performance2;
 import ethier.alex.common.list.ArrayLinkList;
 import ethier.alex.common.list.CompactionList;
 import ethier.alex.common.list.MutationList;
+import ethier.alex.world.metrics.MetricFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.BeforeClass;
@@ -38,6 +40,8 @@ public class MajorPerformanceTest {
         System.out.println("");
         System.out.println("");
         
+        MetricFactory.INSTANCE.setLevel(Level.INFO);
+        
         Collection<Class> testListClasses = new ArrayList<Class>();
         testListClasses.add(ArrayList.class);
         testListClasses.add(LinkedList.class);
@@ -45,18 +49,14 @@ public class MajorPerformanceTest {
         testListClasses.add(ArrayLinkList.class);
         testListClasses.add(MutationList.class);
         
-        int rounds = 5;
+        int rounds = 7;
         int sets = 100;
         
-        ResultCompiler resultCompiler = new ResultCompiler(testListClasses, rounds, sets);
+        ResultCompiler resultCompiler = new ResultCompiler(rounds, sets);
         
-        /*
-        getRank(NumOperations numOperations, 
-                                     double insertRatio, double mutateRatio, 
-                                     int numTraversals, int numRandomAccesses)
-        */
-        
-        Map<Class, Double> rankedResults = resultCompiler.getRank(NumOperations.MEDIUM, 0.15, 0, 5, NumOperations.SMALL.getNumOperations());
+        TestRunner testRunner = MajorPerformanceTest.createSingleWriteSingleReadTest(testListClasses);
+                
+        Map<Class, Double> rankedResults = resultCompiler.getRank(testRunner);
         
         System.out.println("");
         System.out.println("");
@@ -65,6 +65,16 @@ public class MajorPerformanceTest {
         for(Class clazz : rankedResults.keySet()) {
             System.out.println(clazz.getCanonicalName() + " was ranked " + rankedResults.get(clazz));
         }
+        
+        System.out.println("");
+        MetricFactory.INSTANCE.printAll();
     }
     
+    private static TestRunner createSingleWriteSingleReadTest(Collection<Class> testListClasses) {
+        TestRunner testRunner = new TestRunner(testListClasses, StaticTestVariables.LARGE_DATA, 
+                            0, 0,
+                            1, 0);
+        
+        return testRunner;
+    } 
 }

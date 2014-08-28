@@ -4,7 +4,6 @@
  */
 package ethier.alex.common.list;
 
-import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -33,8 +32,11 @@ public class MutationList<E> extends ArrayLinkList<E> {
 
     @Override
     public Iterator<E> iterator() {
-        this.compact();
-        return new MutationIterator<E>();
+        if(numInserts > 0) {
+            this.compact();
+        }
+        
+        return super.iterator();
     }
 
     //

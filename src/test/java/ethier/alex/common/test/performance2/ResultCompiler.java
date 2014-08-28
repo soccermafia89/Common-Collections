@@ -17,23 +17,17 @@ import org.apache.logging.log4j.Logger;
 public class ResultCompiler {
     
     private static Logger logger = LogManager.getLogger(ResultCompiler.class);
-    private Collection<Class> listClasses;
     private int rounds;
     private int sets;
     
-    public ResultCompiler(Collection<Class> testListClasses, int myRounds, int mySets) {
-        listClasses = testListClasses;
+    public ResultCompiler(int myRounds, int mySets) {
         rounds = myRounds;
         sets = mySets;
     }
     
-    public Map<Class, Double> getRank(NumOperations numOperations, 
-                                     double insertRatio, double mutateRatio, 
-                                     int numTraversals, int numRandomAccesses) throws InstantiationException, IllegalAccessException {
+    public Map<Class, Double> getRank(TestRunner testRunner) throws InstantiationException, IllegalAccessException {
         
-        TestRunner testRunner = new TestRunner(listClasses, numOperations, 
-                                            insertRatio, mutateRatio,
-                                            numTraversals, numRandomAccesses);
+
         
         Map<Class, Double> netClassRanks = new HashMap<Class, Double>();
         
