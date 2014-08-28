@@ -14,4 +14,6 @@ public class StaticTestVariables {
     public static final String EXTRA_TIMER = "EXTRA TIMER";
     
     public static final int LARGE_DATA=1000000;
+    
+    public static final int MEDIUM_DATA=10000;
 }

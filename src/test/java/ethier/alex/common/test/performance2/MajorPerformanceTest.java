@@ -31,11 +31,11 @@ public class MajorPerformanceTest {
     }
 
     @Test
-    public void testLargeCollection() throws InstantiationException, IllegalAccessException {
+    public void testPerformance() throws InstantiationException, IllegalAccessException {
         System.out.println("");
         System.out.println("");
         System.out.println("********************************************");
-        System.out.println("********   Large Collection Test   *********");
+        System.out.println("********   Performance Test   *********");
         System.out.println("********************************************");
         System.out.println("");
         System.out.println("");
@@ -54,7 +54,9 @@ public class MajorPerformanceTest {
         
         ResultCompiler resultCompiler = new ResultCompiler(rounds, sets);
         
-        TestRunner testRunner = MajorPerformanceTest.createSingleWriteSingleReadTest(testListClasses);
+//        TestRunner testRunner = MajorPerformanceTest.createSingleWriteSingleReadTest(testListClasses);
+//        TestRunner testRunner = MajorPerformanceTest.createSingleWriteRandomReadTest(testListClasses);
+        TestRunner testRunner = MajorPerformanceTest.createInsertionTest(testListClasses);
                 
         Map<Class, Double> rankedResults = resultCompiler.getRank(testRunner);
         
@@ -69,6 +71,22 @@ public class MajorPerformanceTest {
         System.out.println("");
         MetricFactory.INSTANCE.printAll();
     }
+    
+    private static TestRunner createInsertionTest(Collection<Class> testListClasses) {
+        TestRunner testRunner = new TestRunner(testListClasses, StaticTestVariables.MEDIUM_DATA, 
+                            1, 0,
+                            1, 0);
+        
+        return testRunner;
+    } 
+    
+    private static TestRunner createSingleWriteRandomReadTest(Collection<Class> testListClasses) {
+        TestRunner testRunner = new TestRunner(testListClasses, StaticTestVariables.MEDIUM_DATA, 
+                            0, 0,
+                            1, StaticTestVariables.MEDIUM_DATA);
+        
+        return testRunner;
+    } 
     
     private static TestRunner createSingleWriteSingleReadTest(Collection<Class> testListClasses) {
         TestRunner testRunner = new TestRunner(testListClasses, StaticTestVariables.LARGE_DATA, 

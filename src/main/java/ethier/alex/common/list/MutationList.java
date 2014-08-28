@@ -10,7 +10,9 @@ import java.util.NoSuchElementException;
 
 /**
 
- TODO: consider a cache method.
+ TODO: consider a cache method.  
+ Performance TODO: Create a separate compaction methods if insert/removals occurred to differentiate from normal add based compaction.
+ Testing has shown that this list is worse than compaction list for random access calls after creating the list.
 
  When a user calls the cache on an index, it is added to the cache (does not actually have to occur internally this way).
  When a user calls dumpCache() an array is returned with the elements in the order that they were attached to the cache.

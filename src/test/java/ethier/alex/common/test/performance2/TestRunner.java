@@ -5,6 +5,7 @@
 package ethier.alex.common.test.performance2;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.base.Throwables;
 import ethier.alex.world.metrics.MetricFactory;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -45,28 +46,31 @@ public class TestRunner {
     }
     
     public Map<Class, Long> runTests() throws InstantiationException, IllegalAccessException {
-        
-        System.out.println("TODO: Since random may take a while to compute. pre-compute random values in an array.");
-        
+                
         Map<Class, Long> testResults = new HashMap<Class, Long>();
         randomSeed = (long) (Math.random()*Long.MAX_VALUE);
         Collections.shuffle(listClasses);
         
         for(Class clazz : listClasses) {
-            BufferedRandom random = new BufferedRandom(randomSeed, numOperations, numOperations);
-                       
-            Runtime.getRuntime().gc();
-            
-            Stopwatch stopwatch = Stopwatch.createStarted();
-            this.runPerformanceTest(random, clazz);
-            Runtime.getRuntime().gc();            
-            stopwatch.stop();                       
-//            long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
-            long elapsedNanos = stopwatch.elapsed(TimeUnit.NANOSECONDS);
-            MetricFactory.INSTANCE.getTimer().updateTimer(clazz.getCanonicalName() + StaticTestVariables.TOTAL_TIMER_BASE_KEY, elapsedNanos, TimeUnit.NANOSECONDS);
-            logger.trace("List: {} took {} nanos.", clazz.getCanonicalName(), elapsedNanos);
-            
-            testResults.put(clazz, elapsedNanos); // Hopefully this growing in memory object won't unfairly affect tests.
+            try {
+                BufferedRandom random = new BufferedRandom(randomSeed, numOperations, numOperations);
+
+                Runtime.getRuntime().gc();
+
+                Stopwatch stopwatch = Stopwatch.createStarted();
+                this.runPerformanceTest(random, clazz);
+                Runtime.getRuntime().gc();            
+                stopwatch.stop();                       
+    //            long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+                long elapsedNanos = stopwatch.elapsed(TimeUnit.NANOSECONDS);
+                MetricFactory.INSTANCE.getTimer().updateTimer(clazz.getCanonicalName() + StaticTestVariables.TOTAL_TIMER_BASE_KEY, elapsedNanos, TimeUnit.NANOSECONDS);
+                logger.trace("List: {} took {} nanos.", clazz.getCanonicalName(), elapsedNanos);
+
+                testResults.put(clazz, elapsedNanos); // Hopefully this growing in memory object won't unfairly affect tests.
+            } catch (Exception e) {
+                logger.error("Class: {} failed during testing.", clazz.getCanonicalName());
+                Throwables.propagate(e);
+            }
         }
         
         return testResults;
@@ -85,7 +89,7 @@ public class TestRunner {
             double picker = random.nextDouble();
             
             if(picker < insertRatio) {
-                int insertPoint = random.nextInt(listClazz.size() +1);
+                int insertPoint = random.nextInt(listClazz.size());
 //                MetricFactory.INSTANCE.getTimer().stopTimer(StaticTestVariables.EXTRA_TIMER);
                 listClazz.add(insertPoint, random.nextDouble());
 //                MetricFactory.INSTANCE.getTimer().continueTimer(StaticTestVariables.EXTRA_TIMER);
@@ -129,7 +133,7 @@ public class TestRunner {
         
         int listClassSize = listClazz.size();
         for(int i=0; i < numRandomAccesses; i++) {
-            total += (Double) listClazz.get(random.nextInt(listClassSize));
+            total += (Double) listClazz.get(random.nextInt(listClassSize -1));
         }
         
         logger.trace(total);
