@@ -28,11 +28,12 @@ public class TestRunner {
     private double mutateRatio;
     private int numTraversals;
     private int numRandomAccesses;
+    private boolean includeGC;
             
     
     public TestRunner(Collection<Class> testListClasses, int numOperations, 
                                             double myInsertRatio, double myMutateRatio,
-                                            int myNumTraversals, int myNumRandomAccesses) {
+                                            int myNumTraversals, int myNumRandomAccesses, boolean includeGCbool) {
         
         listClasses = new ArrayList<Class>();
         listClasses.addAll(testListClasses);
@@ -43,6 +44,7 @@ public class TestRunner {
         mutateRatio = myMutateRatio;
         numTraversals = myNumTraversals;
         numRandomAccesses = myNumRandomAccesses;
+        includeGC = includeGCbool;
     }
     
     public Map<Class, Long> runTests() throws InstantiationException, IllegalAccessException {
@@ -59,7 +61,9 @@ public class TestRunner {
 
                 Stopwatch stopwatch = Stopwatch.createStarted();
                 this.runPerformanceTest(random, clazz);
-                Runtime.getRuntime().gc();            
+                if(includeGC) {
+                    Runtime.getRuntime().gc();            
+                }
                 stopwatch.stop();                       
     //            long elapsedMillis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
                 long elapsedNanos = stopwatch.elapsed(TimeUnit.NANOSECONDS);

@@ -10,9 +10,10 @@ import java.util.NoSuchElementException;
 
 /**
 
- TODO: consider a cache method.  
  Performance TODO: Create a separate compaction methods if insert/removals occurred to differentiate from normal add based compaction.
  Testing has shown that this list is worse than compaction list for random access calls after creating the list.
+
+ TODO: consider a cache method.  
 
  When a user calls the cache on an index, it is added to the cache (does not actually have to occur internally this way).
  When a user calls dumpCache() an array is returned with the elements in the order that they were attached to the cache.
@@ -29,7 +30,6 @@ public class MutationList<E> extends ArrayLinkList<E> {
 
     public MutationList() {
         numInserts = 0;
-//        mutationTreeRoot = new MutationNode();
     }
 
     @Override
@@ -134,7 +134,7 @@ public class MutationList<E> extends ArrayLinkList<E> {
 //            int arrayLinkListValues = super.totalSize - numInserts; // Number of values in the array link list.
 //            System.out.println("ArrayLinkList values: " + arrayLinkListValues);
 
-            int newSize = (super.totalSize * 3) / 2 + 1;
+            int newSize = (super.totalSize * 3) / 2 + 1; // TODO: remove resize on compaction.
             Object[] compactArray = new Object[newSize];
 
             ChangeNode[] changeLog = null;
@@ -159,6 +159,7 @@ public class MutationList<E> extends ArrayLinkList<E> {
             int arrayLinkOffset = 0;
 
             // Merge all elements in the change log.
+            // TODO: instead of a while loop, use an if for the changeLog null check.
             while (changeLog != null && changeLogCounter < changeLog.length) {
 
                 // First merge the underlying array link list values up to the current change log index.
@@ -200,6 +201,8 @@ public class MutationList<E> extends ArrayLinkList<E> {
             while (tmpLink != null) {
                 int remainingValues = tmpLink.values.length - arrayLinkOffset; // Number of remaining values that were not copied in the current link.
                 int nextCompactArrayOffset = compactArrayOffset + remainingValues; // This while loop is set up funny so this is required, fix later.
+                // Try to first calculate the total number of remaining elements to be copied, then iterate while that value is greater than the current array link length.
+                // Subtracting from it each iteration.
                 if (nextCompactArrayOffset > compactArray.length) {
                     System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, compactArray.length - compactArrayOffset);
                     break;

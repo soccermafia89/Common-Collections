@@ -2,7 +2,7 @@ package ethier.alex.common.list;
 
 /**
 
-To be used by the ArrayLinkList.
+To be used by the ArrayLinkList.  Is a single link in a link list that contains an array as its value.
 
  @author Alex Ethier
  */

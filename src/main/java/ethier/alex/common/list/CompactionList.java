@@ -1,9 +1,6 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package ethier.alex.common.list;
 
+import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -13,22 +10,19 @@ import java.util.NoSuchElementException;
  An implementation of List. Should have much better write performance than an ArrayList while retaining read performance.
 
 TODO: Override insert and remove if they are running slower (match new implementation to arraylist after calling a compaction).
-TODO: Do not compact on traversal (iterator called).
-TODO: Do not append extra space on certain compactions.
 
  @author Alex Ethier
  */
 public class CompactionList<E> extends ArrayLinkList<E> {
 
-//    Object[] compactArray;// Consider removing this pointer and instead using super.firstLink
-
     @Override
     public E get(int index) {
-        compact();
         if(index > super.totalSize) {
             throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + totalSize);
         }
         
+        compact();
+
         return (E) super.firstLink.values[index];
     }
 
@@ -46,7 +40,8 @@ public class CompactionList<E> extends ArrayLinkList<E> {
         if (super.firstLink.next != null) {
             ArrayLink link = super.firstLink;
 
-            int newSize = (super.totalSize * 3) / 2 + 1;
+//            int newSize = (super.totalSize * 3) / 2 + 1; // Do not add additional space.
+            int newSize = super.totalSize;
             Object[] compactArray = new Object[newSize];
             int offset = 0;
 
@@ -68,7 +63,7 @@ public class CompactionList<E> extends ArrayLinkList<E> {
     @Override
     public Object[] toArray() {
         this.compact();
-        return super.toArray();
+        return Arrays.copyOf(super.firstLink.values, super.totalSize);
     }
 
     @Override

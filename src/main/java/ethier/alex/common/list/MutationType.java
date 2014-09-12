@@ -6,7 +6,9 @@ package ethier.alex.common.list;
 
 /**
 
- @author alex
+Define the two types of mutations to the list, insert and remove.
+
+ @author Alex Ethier
  */
 public enum MutationType {
     

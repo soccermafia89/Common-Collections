@@ -6,10 +6,11 @@ package ethier.alex.common.list;
 
 /**
 
-Initially design the mutation nodes as non-arrays.  After finishing implementation, speed up write performance by having the write link store an array.
+This class is used by the MutationList.  Any insert or remove on the list is stored in a tree instead of being applied immediately.
+The change events are thus wrapped in tree nodes.
 TODO: Recreate interface with the INSERT and REMOVE nodes to save on memory usage.
 
- @author alex
+ @author Alex Ethier
  */
 public class MutationNode {
     protected MutationNode leftChild;

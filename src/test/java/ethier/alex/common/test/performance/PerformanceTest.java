@@ -5,8 +5,10 @@ import ethier.alex.common.list.ArrayLinkList;
 import ethier.alex.common.list.CompactionList;
 import ethier.alex.common.list.ControlArrayList;
 import ethier.alex.common.list.StaticControlConfigurator;
+import ethier.alex.world.metrics.MetricFactory;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.github.jamm.MemoryMeter;
@@ -42,11 +44,13 @@ public class PerformanceTest {
 //        long bytes = MemoryMeasurer.measureBytes("test");
 //        System.out.println("Test size: " + bytes);
 //        MemoryMeter meter = new MemoryMeter();
+        
+        MetricFactory.INSTANCE.setLevel(Level.INFO);
 
 
-        for (int round = 0; round < 2; round++) {
+        for (int round = 0; round < 100; round++) {
 
-            int size = 20000000;
+            int size = 200000;
             RandomDataGenerator dataGenerator = new RandomDataGenerator();
             Double[] values = dataGenerator.getDoubles(size);
             Stopwatch methodTimer = Stopwatch.createUnstarted();
@@ -100,11 +104,6 @@ public class PerformanceTest {
                 methodTimer.stop();
                 logger.info("{} took {} milliseconds to traverse {} entries.", collection.getClass().getCanonicalName(), methodTimer.elapsed(TimeUnit.MILLISECONDS), size);
                 methodTimer.reset();
-
-
-                collectionTimer.stop();
-                logger.info("{} took {} milliseconds total.", collection.getClass().getCanonicalName(), collectionTimer.elapsed(TimeUnit.MILLISECONDS));
-                collectionTimer.reset();
                 
 //                Stopwatch memoryTimer = Stopwatch.createStarted();
 //                long byteUsage = meter.measureDeep(collection);
@@ -113,12 +112,22 @@ public class PerformanceTest {
 //                memoryTimer.reset();
                 
                 it.remove();
+                String collectionName = collection.getClass().getCanonicalName();
+                collection = null;
                 Runtime.getRuntime().gc();
+                
+                collectionTimer.stop();
+                logger.info("{} took {} milliseconds total.", collectionName, collectionTimer.elapsed(TimeUnit.MILLISECONDS));
+                MetricFactory.INSTANCE.getTimer().updateTimer(collectionName, collectionTimer.elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
+                collectionTimer.reset();
+                
                 logger.info("");
             }
 
             logger.trace("Total: {}", total);
         }
+        
+        MetricFactory.INSTANCE.printAll();
     }
     
     @Test

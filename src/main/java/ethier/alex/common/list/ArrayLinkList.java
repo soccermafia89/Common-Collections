@@ -10,13 +10,12 @@ import java.util.*;
  */
 public class ArrayLinkList<E> implements List<E> {
 
-    private static final int initSize = 16;
-//    private static final int initSize = 2;
-    protected ArrayLink writeLink;
+    private static final int initSize = 12; // Set the initial size to mimic current array lists.
+    protected ArrayLink writeLink; // Pointer to the tail of the list for fast writing.
     protected int writeLinkOffset; // Where to write new values in the current writeLink's arraylist.
-    protected int totalSize;
-    protected int modCount; // Used for fail-fast iterators
-    protected ArrayLink firstLink;
+    protected int totalSize; // Keep trace of the size of the list.
+    protected int modCount; // Used for fail-fast iterators.
+    protected ArrayLink firstLink; // Pointer to the head of the list for reading.
 
     public ArrayLinkList() {
         writeLink = new ArrayLink(initSize);
@@ -35,12 +34,11 @@ public class ArrayLinkList<E> implements List<E> {
     @Override
     public boolean add(E object) {
 
-        // TODO: consider switching less than with !=
-        if (writeLinkOffset < writeLink.values.length) {
+        if (writeLinkOffset != writeLink.values.length) {
             writeLink.values[writeLinkOffset] = object;
             writeLinkOffset++;
-        } else {
-            int newSize = (writeLink.values.length * 3) / 2 + 1;
+        } else { // Once the current write link's array is full, allocate a new array rather than using array copy.
+            int newSize = (writeLink.values.length * 3) / 2 + 1; // When creating the new size mimic array list's implementation.
 
             writeLink.next = new ArrayLink(newSize);
             writeLink = writeLink.next;
@@ -54,13 +52,7 @@ public class ArrayLinkList<E> implements List<E> {
         return true;
     }
 
-    /* TODO: ensure we have test cases for:
-
-     index < total size but is at last link
-     index < total size, is not at last link
-
-     using this add method to fully populate the list (consider using a random insert generator).
-     */
+    // Inserting elements at random points behaves like a normal array list except on the specific array link instead of the entire list.
     @Override
     public void add(int index, E element) {
 
@@ -68,14 +60,14 @@ public class ArrayLinkList<E> implements List<E> {
             throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + totalSize);
         }
 
-        int arrayLinkListOffset = 0; // Keeps track of how many elements we have traversed via link list.
+        int arrayLinkListOffset = 0; // Tracks absolute number of elements we have traversed in the list.
         ArrayLink tmpLink = firstLink;
         while ((arrayLinkListOffset += tmpLink.values.length) < index) {
             tmpLink = tmpLink.next;
         }
         
         if (tmpLink.next == null) {// We are at the last link, i.e the writeLink
-            if (totalSize == arrayLinkListOffset) { // The last link happens to full so.
+            if (totalSize == arrayLinkListOffset) { // The last link happens to be full.
                 // TODO: Since this code is the same as below, consider creating a single method to use.
                 int shiftValues = arrayLinkListOffset - index; // Number of elements we have to shift.
                 int arrayLinkOffset = writeLink.values.length - shiftValues; // Where to begin shifting elements.
@@ -88,9 +80,9 @@ public class ArrayLinkList<E> implements List<E> {
                 writeLink.values[arrayLinkOffset] = element;
             } else { // Creating a new array is not necessary, only shift over required elements.
                 int arrayLinkIndex = (index - arrayLinkListOffset) + writeLink.values.length; // Where to begin shifting elements.                
-                int shiftValues = writeLinkOffset - arrayLinkIndex; // See calculations above.
+                int shiftValues = writeLinkOffset - arrayLinkIndex;
                                 
-//                if(shiftValues > 0) {
+//                if(shiftValues > 0) {  Not sure if this check makes things faster or slower...
                     System.arraycopy(writeLink.values, arrayLinkIndex, writeLink.values, arrayLinkIndex + 1, shiftValues);
 //                }
                 writeLink.values[arrayLinkIndex] = element;
@@ -199,16 +191,8 @@ public class ArrayLinkList<E> implements List<E> {
     }
 
     /*
-     Method one:
-     If collection.size > remaining object[] size
-     Then shrink current object[] and add a new link
-     otherwise copy the array elements onto the current array.
-
-     Method two:
-     Always shrink the current object[] (do no checks in method 1) and append on a new ArrayLink
-
-     Method three:
-     Individually copy elements over.
+     
+    Fill up the current array with values and then create a new array link if necessary.
 
      */
     @Override
@@ -267,12 +251,19 @@ public class ArrayLinkList<E> implements List<E> {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /*
+    
+    TODO: This algorithm can be better optimized.  Instead of using a while loop and checking each iteration,
+    we can calculate the number of elements we need to check and use a for loop instad, if we find the element the return statement
+    will break early.
+        
+    */
     @Override
     public int indexOf(Object o) {
 
         ArrayLink tmpLink = firstLink;
-        int totalOffset = 0;
-        int linkOffset = 0;
+        int totalOffset = 0; // Absolute index we are searching through and will return.
+        int linkOffset = 0; // The relative offset to the link we are currently on, used to determine when to switch links.
         if (o == null) {
             while (totalOffset < totalSize) {
                 if (linkOffset == tmpLink.values.length) {
@@ -354,17 +345,40 @@ public class ArrayLinkList<E> implements List<E> {
     public boolean retainAll(Collection<?> c) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    // Do not support
+    
+    // Need an explanation on why the array list implementation holds onto its allocated memory upon clearing.
+    // Till then just do what the constructor does.
     @Override
     public void clear() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        modCount++;
+        
+        writeLink = new ArrayLink(initSize);
+        writeLinkOffset = 0;
+        firstLink = writeLink;
+        totalSize = 0;
     }
 
-    // Do not support
+    /*
+    
+    TODO: This has the most efficient iteration method which isn't used throughout other method implementations.
+    Try using this iteration method throughout.
+    
+    */
     @Override
     public E set(int index, E element) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (index > totalSize || index < 0) {
+            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + totalSize);
+        }
+
+        ArrayLink tmpLink = firstLink;
+        while(index > tmpLink.values.length) {
+            index -= tmpLink.values.length;
+            tmpLink = tmpLink.next;
+        }
+                
+        Object object = tmpLink.values[index];
+        tmpLink.values[index] = element;
+        return (E) object;
     }
 
     /**
@@ -378,6 +392,7 @@ public class ArrayLinkList<E> implements List<E> {
         protected int totalCurrentOffset;
         protected int linkOffset;
         protected int iteratorModCount;// Used for throwing fail fast exceptions.
+        protected int removeOffset; // Used to track last removed offset.
 
         public ArrayLinkListIterator() {
             linkPointer = firstLink;
@@ -394,7 +409,7 @@ public class ArrayLinkList<E> implements List<E> {
         @Override
         public E next() {
 
-            checkModCount();
+            this.checkModCount();
             if (totalCurrentOffset >= totalSize) {
                 throw new NoSuchElementException();
             }
@@ -413,10 +428,14 @@ public class ArrayLinkList<E> implements List<E> {
             }
         }
 
-        // Do not support.
+        // Do not support...yet
         @Override
         public void remove() {
-            throw new UnsupportedOperationException("Not supported yet.");
+            this.checkModCount();
+            ArrayLinkList.this.remove(totalCurrentOffset);
+            totalCurrentOffset--;
+            linkOffset--;
+            iteratorModCount++;  
         }
 
         final void checkModCount() {

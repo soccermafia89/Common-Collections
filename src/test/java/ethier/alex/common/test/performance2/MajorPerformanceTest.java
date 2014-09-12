@@ -49,14 +49,15 @@ public class MajorPerformanceTest {
         testListClasses.add(ArrayLinkList.class);
         testListClasses.add(MutationList.class);
         
-        int rounds = 7;
+        int rounds = 5;
         int sets = 100;
         
         ResultCompiler resultCompiler = new ResultCompiler(rounds, sets);
         
 //        TestRunner testRunner = MajorPerformanceTest.createSingleWriteSingleReadTest(testListClasses);
 //        TestRunner testRunner = MajorPerformanceTest.createSingleWriteRandomReadTest(testListClasses);
-        TestRunner testRunner = MajorPerformanceTest.createInsertionTest(testListClasses);
+//        TestRunner testRunner = MajorPerformanceTest.createInsertionTest(testListClasses);
+        TestRunner testRunner = MajorPerformanceTest.createHugeAddTest(testListClasses);
                 
         Map<Class, Double> rankedResults = resultCompiler.getRank(testRunner);
         
@@ -72,10 +73,18 @@ public class MajorPerformanceTest {
         MetricFactory.INSTANCE.printAll();
     }
     
+    private static TestRunner createHugeAddTest(Collection<Class> testListClasses) {
+        TestRunner testRunner = new TestRunner(testListClasses, StaticTestVariables.LARGE_DATA, 
+                            0, 0,
+                            1, 0, false);
+        
+        return testRunner;
+    }
+    
     private static TestRunner createInsertionTest(Collection<Class> testListClasses) {
         TestRunner testRunner = new TestRunner(testListClasses, StaticTestVariables.MEDIUM_DATA, 
                             1, 0,
-                            1, 0);
+                            1, 0, false);
         
         return testRunner;
     } 
@@ -83,7 +92,7 @@ public class MajorPerformanceTest {
     private static TestRunner createSingleWriteRandomReadTest(Collection<Class> testListClasses) {
         TestRunner testRunner = new TestRunner(testListClasses, StaticTestVariables.MEDIUM_DATA, 
                             0, 0,
-                            1, StaticTestVariables.MEDIUM_DATA);
+                            1, StaticTestVariables.MEDIUM_DATA, false);
         
         return testRunner;
     } 
@@ -91,7 +100,7 @@ public class MajorPerformanceTest {
     private static TestRunner createSingleWriteSingleReadTest(Collection<Class> testListClasses) {
         TestRunner testRunner = new TestRunner(testListClasses, StaticTestVariables.LARGE_DATA, 
                             0, 0,
-                            1, 0);
+                            1, 0, false);
         
         return testRunner;
     } 
