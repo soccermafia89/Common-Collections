@@ -13,8 +13,7 @@ import java.util.NoSuchElementException;
  Performance TODO: Create a separate compaction methods if insert/removals occurred to differentiate from normal add based compaction.
  Testing has shown that this list is worse than compaction list for random access calls after creating the list.
 
- TODO: consider a cache method.  
-
+ TODO: consider a cache method.
  When a user calls the cache on an index, it is added to the cache (does not actually have to occur internally this way).
  When a user calls dumpCache() an array is returned with the elements in the order that they were attached to the cache.
 
@@ -25,19 +24,19 @@ import java.util.NoSuchElementException;
  */
 public class MutationList<E> extends ArrayLinkList<E> {
 
-    private int numInserts;
+    private int numMutations; // The number of insertions/mutations that are written into the change tree.
     private MutationNode mutationTreeRoot;
 
     public MutationList() {
-        numInserts = 0;
+        numMutations = 0;
     }
 
     @Override
     public Iterator<E> iterator() {
-        if(numInserts > 0) {
+        if (numMutations > 0) {
             this.compact();
         }
-        
+
         return super.iterator();
     }
 
@@ -50,7 +49,7 @@ public class MutationList<E> extends ArrayLinkList<E> {
 //        System.out.println("");
 //        System.out.println("Insert called with index: " + index + " value: " + element);
 
-        if (numInserts == 0) {
+        if (numMutations == 0) {
             mutationTreeRoot = new MutationNode();
             mutationTreeRoot.value = element;
             mutationTreeRoot.delta = index;
@@ -60,7 +59,7 @@ public class MutationList<E> extends ArrayLinkList<E> {
         }
 
         super.totalSize++;
-        numInserts++;
+        numMutations++;
 
 //        printTree();
     }
@@ -125,79 +124,77 @@ public class MutationList<E> extends ArrayLinkList<E> {
     // Converts the write buffer mutationList into the read buffer compactArray
 
     // Converts the write buffer mutationList into the read buffer compactArray
-    // TODO: Experiment with fine tuned code optimization, keep in mind the JVM may do this automatically.
     private void compact() {
-        if (super.firstLink.next != null || numInserts > 0) {
+        if (super.firstLink.next != null || numMutations > 0) {
 //            System.out.println("Processing Compaction.");
 //            System.out.println("Total size: " + super.totalSize);
 //            System.out.println("Inserts: " + numInserts);
 //            int arrayLinkListValues = super.totalSize - numInserts; // Number of values in the array link list.
 //            System.out.println("ArrayLinkList values: " + arrayLinkListValues);
 
-            int newSize = (super.totalSize * 3) / 2 + 1; // TODO: remove resize on compaction.
+//            int newSize = (super.totalSize * 3) / 2 + 1; // Do not allocate extra space on compaction.
+            int newSize = super.totalSize + this.getRemainingSize();
             Object[] compactArray = new Object[newSize];
 
-            ChangeNode[] changeLog = null;
-            if (numInserts != 0) {
-                changeLog = new ChangeNode[numInserts];
-                this.flattenTree(mutationTreeRoot, changeLog, 0, 0);
-                mutationTreeRoot = null; // Clear the mutation tree.
-
-//                System.out.print("Change log value list with length: " + changeLog.length + ": [");
-//                for (int i = 0; i < changeLog.length; i++) {
-//                    ChangeNode changeNode = changeLog[i];
-//                    System.out.print(" " + changeNode.index + "=" + changeNode.value);
-//                }
-//                System.out.println(" ]");
-            }
-//            System.out.println("ArrayLinkList values:");
-//            super.print();
-
-            int changeLogCounter = 0; // Keep track of where in the changelog we are at.
             ArrayLink tmpLink = super.firstLink; // The arraylink we are traversing to do compaction.
             int compactArrayOffset = 0; // Keep track of the write position for the compact array.
-            int arrayLinkOffset = 0;
+            int arrayLinkOffset = 0; // Offset in the current array link for elements already copied into the compact array.
 
-            // Merge all elements in the change log.
-            // TODO: instead of a while loop, use an if for the changeLog null check.
-            while (changeLog != null && changeLogCounter < changeLog.length) {
+            if (numMutations != 0) { // First merge in all insertions/removals
 
-                // First merge the underlying array link list values up to the current change log index.
-                int numArrayLinkCopies = changeLog[changeLogCounter].index - compactArrayOffset; // Number of remaining array link copies to make.
+                ChangeNode[] changeLog = new ChangeNode[numMutations];
+                this.flattenTree(mutationTreeRoot, changeLog, 0, 0);
+                mutationTreeRoot = null; // Immediately Clear the mutation tree.
 
-                int remainingValues; // Number of remaining values that were not copied in the current link.
-                // This could span multiple links.
-                while (numArrayLinkCopies > (remainingValues = tmpLink.values.length - arrayLinkOffset)) {
-                    System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, remainingValues);
-                    compactArrayOffset += remainingValues;
-                    numArrayLinkCopies -= remainingValues;
-                    
-                    arrayLinkOffset = 0;
-                    tmpLink = tmpLink.next;
-                }
-                
+                for (int changeLogCounter = 0; changeLogCounter < changeLog.length; changeLogCounter++) {
 
-                // Copy remaining elements in last link.
-                System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, numArrayLinkCopies);
-                arrayLinkOffset += numArrayLinkCopies;
-                compactArrayOffset += numArrayLinkCopies;
+                    // First merge the underlying array link list values up to the current change log index.
+                    // Number of elements needed to be copied from the array link list before applying the next change node.
+                    int numArrayLinkCopies = changeLog[changeLogCounter].index - compactArrayOffset;
 
-                // Second apply the change event and increment the change log counter.
-                if (changeLog[changeLogCounter].mutationType == MutationType.INSERT) {
-                    compactArray[compactArrayOffset] = changeLog[changeLogCounter].value;
-                    compactArrayOffset++;
-                } else { // Else assume removal (by incrementing the arrayLinkOffset.)
-                    arrayLinkOffset++;
-                }
+                    int remainingValues = tmpLink.values.length - arrayLinkOffset; // Number of remaining values that were not copied in the current link.
 
-                changeLogCounter++;
+                    if (numArrayLinkCopies > remainingValues) { // If the number of elements to copy will overflow to the next array link.
+                        // First copy the remaining elements in our current array link.
+                        System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, remainingValues);
+                        compactArrayOffset += remainingValues;
+                        numArrayLinkCopies -= remainingValues;
+                        arrayLinkOffset = 0;
+                        tmpLink = tmpLink.next;
+
+                        // Next traverse each array link copying the full link over if possible.
+                        while (numArrayLinkCopies > tmpLink.values.length) {
+                            System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, tmpLink.values.length);
+                            compactArrayOffset += tmpLink.values.length;
+                            numArrayLinkCopies -= tmpLink.values.length;
+
+                            tmpLink = tmpLink.next;
+                        }
+                    }
+
+                    // Copy remaining elements in last link.
+                    System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, numArrayLinkCopies);
+                    arrayLinkOffset += numArrayLinkCopies;
+                    compactArrayOffset += numArrayLinkCopies;
+
+                    // Apply the change event
+                    if (changeLog[changeLogCounter].mutationType == MutationType.INSERT) {
+                        compactArray[compactArrayOffset] = changeLog[changeLogCounter].value;
+                        compactArrayOffset++;
+                    } else { // Else assume removal (by incrementing the arrayLinkOffset.)
+                        arrayLinkOffset++;
+                    }
 //                System.out.println("Finished Applying Change Event, new compacted values: " + Arrays.toString(compactArray));
+                }
             }
+
+//            System.out.println("ArrayLinkList values:");
+//            super.print();
 
 //            System.out.println("Finished applying all change log events, compact remaining array link list values.");
 //            System.out.println("Current compact array snapshot: " + Arrays.toString(compactArray));
 
-            // Now apply the rest of the array link values whose index is beyond any change events.
+            // Now compact the rest of the array link values whose index is beyond any change events.
             while (tmpLink != null) {
                 int remainingValues = tmpLink.values.length - arrayLinkOffset; // Number of remaining values that were not copied in the current link.
                 int nextCompactArrayOffset = compactArrayOffset + remainingValues; // This while loop is set up funny so this is required, fix later.
@@ -211,7 +208,7 @@ public class MutationList<E> extends ArrayLinkList<E> {
                     compactArrayOffset = nextCompactArrayOffset;
                     arrayLinkOffset = 0;
                 }
-                
+
                 tmpLink = tmpLink.next;
             }
 
@@ -220,8 +217,12 @@ public class MutationList<E> extends ArrayLinkList<E> {
             super.writeLink = tmpLink;
             super.writeLinkOffset = super.totalSize;
 
-            numInserts = 0; // Don't forget to reset the number of mutations.
+            numMutations = 0; // Don't forget to reset the number of mutations.
         }
+    }
+
+    protected int getRemainingSize() {
+        return super.writeLink.values.length - super.writeLinkOffset;
     }
 
     //TODO: Change the writeArray type to a changelog node.

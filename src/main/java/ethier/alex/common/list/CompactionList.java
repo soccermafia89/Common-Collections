@@ -41,7 +41,7 @@ public class CompactionList<E> extends ArrayLinkList<E> {
             ArrayLink link = super.firstLink;
 
 //            int newSize = (super.totalSize * 3) / 2 + 1; // Do not add additional space.
-            int newSize = super.totalSize;
+            int newSize = super.totalSize + this.getRemainingSize();
             Object[] compactArray = new Object[newSize];
             int offset = 0;
 
@@ -58,6 +58,10 @@ public class CompactionList<E> extends ArrayLinkList<E> {
             super.firstLink = link;
             super.writeLink = link;
         }
+    }
+    
+    protected int getRemainingSize() {
+        return super.writeLink.values.length - super.writeLinkOffset;
     }
 
     @Override
