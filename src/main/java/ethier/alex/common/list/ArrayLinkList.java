@@ -5,6 +5,8 @@ import java.util.*;
 /**
 
  An implementation of List. Should have much better write performance than ArrayLists, but will be slower during random access.
+TODO: Consider having an array link counter that keeps track of the number of links in the list.  This will prove useful when traversing the list
+as we no longer need while loops and instead may use for loops for traversal.
 
  @author Alex Ethier
  */

@@ -195,21 +195,28 @@ public class MutationList<E> extends ArrayLinkList<E> {
 //            System.out.println("Current compact array snapshot: " + Arrays.toString(compactArray));
 
             // Now compact the rest of the array link values whose index is beyond any change events.
-            while (tmpLink != null) {
-                int remainingValues = tmpLink.values.length - arrayLinkOffset; // Number of remaining values that were not copied in the current link.
-                int nextCompactArrayOffset = compactArrayOffset + remainingValues; // This while loop is set up funny so this is required, fix later.
-                // Try to first calculate the total number of remaining elements to be copied, then iterate while that value is greater than the current array link length.
-                // Subtracting from it each iteration.
-                if (nextCompactArrayOffset > compactArray.length) {
-                    System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, compactArray.length - compactArrayOffset);
-                    break;
-                } else {
-                    System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, remainingValues);
-                    compactArrayOffset = nextCompactArrayOffset;
-                    arrayLinkOffset = 0;
-                }
-
+            
+            
+            int remainingValues = tmpLink.values.length - arrayLinkOffset; // Number of remaining values that were not copied in the current link.
+            int remainderToCopy = super.totalSize - compactArrayOffset; // The number of elements left to copy.
+            if(remainderToCopy > remainingValues) { // First finish up the current link's remaining elements which is a corner case.
+                System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, remainingValues);
+                compactArrayOffset += remainingValues;
+                remainderToCopy -= remainingValues;
                 tmpLink = tmpLink.next;
+                
+                // Now loop through the array links copying their entire list as necessary.
+                while(remainderToCopy > tmpLink.values.length) {
+                    System.arraycopy(tmpLink.values, 0, compactArray, compactArrayOffset, tmpLink.values.length);
+                    compactArrayOffset += tmpLink.values.length;
+                    remainderToCopy -= tmpLink.values.length;
+                    tmpLink = tmpLink.next;
+                }
+                
+                // On the final array link only copy over what we need.
+                System.arraycopy(tmpLink.values, 0, compactArray, compactArrayOffset, remainderToCopy);
+            } else {
+                System.arraycopy(tmpLink.values, arrayLinkOffset, compactArray, compactArrayOffset, remainderToCopy);
             }
 
             tmpLink = new ArrayLink(compactArray);
